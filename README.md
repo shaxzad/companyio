@@ -84,7 +84,7 @@ interview-copilot/
 │   │   ├── tsconfig.json
 │   │   └── vitest.config.ts
 │   │
-│   ├── platform-database/         # Shared MongoDB connection
+│   ├── platform-database/         # Shared PostgreSQL connection
 │   │   ├── src/
 │   │   │   └── index.ts          # Database conventions
 │   │   ├── package.json
@@ -161,7 +161,7 @@ interview-copilot/
 
 **API Server** (`apps/api/`)
 
-- ✅ `package.json` - Dependencies (Fastify, MongoDB, TypeScript, etc.)
+- ✅ `package.json` - Dependencies (Fastify, Prisma, PostgreSQL, TypeScript, etc.)
 - ✅ `tsconfig.json` - Node.js backend TypeScript config
 - ✅ `vitest.config.ts` - Test runner configuration
 - ✅ `.eslintrc.json` - ESLint configuration
@@ -206,7 +206,7 @@ interview-copilot/
 | **Desktop**          | Tauri 2 + React 18 + TypeScript             |
 | **Native**           | Rust (Tauri internals)                      |
 | **Backend**          | Node.js + Fastify + TypeScript              |
-| **Database**         | MongoDB Atlas                               |
+| **Database**         | PostgreSQL with Prisma                      |
 | **UI Framework**     | Tailwind CSS + shadcn/ui (ready to install) |
 | **State Management** | Zustand                                     |
 | **Validation**       | Zod                                         |
@@ -267,7 +267,7 @@ pnpm --filter @companyio/desktop dev
 Key variables configured in `.env.example`:
 
 ```
-MONGODB_URI=mongodb+srv://...          # MongoDB connection
+DATABASE_URL=postgresql://...          # PostgreSQL connection
 API_PORT=3000                           # API server port
 API_HOST=localhost                      # API host
 VITE_API_URL=http://localhost:3000     # Frontend API URL
@@ -351,10 +351,10 @@ This monorepo contains the following npm packages that can be used independently
 
 ### Data Packages
 
-| Package                        | Description                                                | Key Dependencies                                         |
-| ------------------------------ | ---------------------------------------------------------- | -------------------------------------------------------- |
-| `@companyio/platform-database` | Shared MongoDB connection and product database conventions | `mongodb`                                                |
-| `@companyio/platform-tenancy`  | Shared SaaS tenant context and Fastify scope enforcement   | `@companyio/auth-contracts`, `fastify`, `fastify-plugin` |
+| Package                        | Description                                              | Key Dependencies                                         |
+| ------------------------------ | -------------------------------------------------------- | -------------------------------------------------------- |
+| `@companyio/platform-database` | Shared PostgreSQL connection conventions                 | `pg`                                                     |
+| `@companyio/platform-tenancy`  | Shared SaaS tenant context and Fastify scope enforcement | `@companyio/auth-contracts`, `fastify`, `fastify-plugin` |
 
 ### AI Packages
 

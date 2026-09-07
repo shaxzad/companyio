@@ -1,56 +1,62 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import { randomUUID } from 'node:crypto';
 import { afterAll, describe, expect, it } from 'vitest';
-import { MongoClient } from 'mongodb';
+import { PrismaClient } from './generated/prisma/client.ts';
 
-const uri = process.env.MONGODB_TEST_URI;
-const client = uri ? new MongoClient(uri) : null;
-const test = uri ? it : it.skip;
+const databaseUrl = process.env.DATABASE_URL;
+const prisma = databaseUrl
+  ? new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) })
+  : null;
+const integrationTest = databaseUrl ? it : it.skip;
 
-describe('MongoDB auth data model', () => {
-  it('requires MONGODB_TEST_URI for integration coverage', () => {
-    expect(uri ?? 'Set MONGODB_TEST_URI to run MongoDB integration tests').toBeTruthy();
+describe('PostgreSQL auth data model', () => {
+  it('requires DATABASE_URL for integration coverage', () => {
+    expect(databaseUrl ?? 'Set DATABASE_URL to run PostgreSQL integration tests').toBeTruthy();
   });
 
-  test('stores a user, temporary business, branch, and expiring session together', async () => {
-    await client!.connect();
-    const database = client!.db(`interview_copilot_test_${randomUUID()}`);
-    const users = database.collection('users');
-    const businesses = database.collection('businesses');
-    const branches = database.collection('branches');
-    const sessions = database.collection('sessions');
+  integrationTest('stores a user, business, branch, and expiring session together', async () => {
     const userId = randomUUID();
     const businessId = randomUUID();
     const branchId = randomUUID();
     const accessToken = randomUUID();
+    const email = `${userId}@integration.example.com`;
 
-    await sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-    await users.insertOne({
-      id: userId,
-      email: 'integration@example.com',
-      main_business_id: businessId,
-      branch_id: branchId,
+    await prisma!.business.create({
+      data: { id: businessId, name: 'Interview Copilot', slug: `interview-${businessId}` },
     });
-    await businesses.insertOne({
-      id: businessId,
-      name: 'Interview Copilot',
-      createdAt: new Date().toISOString(),
+    await prisma!.branch.create({
+      data: { id: branchId, main_business_id: businessId, name: 'Main Branch' },
     });
-    await branches.insertOne({
-      id: branchId,
-      main_business_id: businessId,
-      name: 'Main Branch',
-      createdAt: new Date().toISOString(),
+    await prisma!.user.create({
+      data: {
+        id: userId,
+        email,
+        name: 'Integration User',
+        passwordHash: 'test-hash',
+        main_business_id: businessId,
+        branch_id: branchId,
+      },
     });
-    await sessions.insertOne({ accessToken, userId, expiresAt: Date.now() + 60_000 });
+    await prisma!.session.create({
+      data: { accessToken, userId, expiresAt: new Date(Date.now() + 60_000) },
+    });
 
-    expect(await users.countDocuments({ id: userId })).toBe(1);
-    expect(await businesses.countDocuments({ id: businessId })).toBe(1);
-    expect(await branches.countDocuments({ id: branchId, main_business_id: businessId })).toBe(1);
-    expect(await sessions.findOne({ accessToken, userId })).toBeTruthy();
-    await database.dropDatabase();
+    expect(await prisma!.user.count({ where: { id: userId } })).toBe(1);
+    expect(await prisma!.business.count({ where: { id: businessId } })).toBe(1);
+    expect(
+      await prisma!.branch.count({ where: { id: branchId, main_business_id: businessId } })
+    ).toBe(1);
+    expect(await prisma!.session.findUnique({ where: { accessToken, userId } })).toBeTruthy();
+
+    await prisma!.$transaction([
+      prisma!.session.deleteMany({ where: { accessToken } }),
+      prisma!.user.delete({ where: { id: userId } }),
+      prisma!.branch.delete({ where: { id: branchId } }),
+      prisma!.business.delete({ where: { id: businessId } }),
+    ]);
   });
 });
 
 afterAll(async () => {
-  await client?.close();
+  await prisma?.$disconnect();
 });

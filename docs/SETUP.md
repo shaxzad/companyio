@@ -33,7 +33,7 @@ cp .env.example .env
 
 Update `.env` with your actual values:
 
-- MongoDB connection string
+- PostgreSQL `DATABASE_URL`
 - API configuration
 - AI service keys (OpenAI, Anthropic)
 

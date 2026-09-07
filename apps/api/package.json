@@ -6,30 +6,35 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "node --loader ts-node/esm src/index.ts",
-    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "generate": "prisma generate",
+    "build": "pnpm run generate && tsc",
     "start": "node dist/index.js",
     "test": "vitest run",
     "lint": "eslint src --ext ts"
   },
   "dependencies": {
+    "@companyio/ai-schemas": "workspace:*",
     "@companyio/auth-contracts": "workspace:*",
-    "fastify": "^4.25.0",
+    "@companyio/shared-types": "workspace:*",
     "@fastify/cors": "^8.5.0",
     "@fastify/env": "^4.2.0",
     "@fastify/helmet": "^11.1.0",
-    "mongodb": "^6.3.0",
-    "mongoose": "^8.0.0",
-    "zod": "^3.22.0",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "^7.10.0",
     "axios": "^1.6.0",
     "dotenv": "^16.4.5",
-    "@companyio/shared-types": "workspace:*",
-    "@companyio/ai-schemas": "workspace:*"
+    "fastify": "^4.25.0",
+    "pg": "^8.23.0",
+    "zod": "^3.22.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "typescript": "^5.3.3",
+    "@types/pg": "^8.23.1",
+    "prisma": "7.10.0",
     "ts-node": "^10.9.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.3.3",
     "vitest": "^1.1.0"
   }
 }

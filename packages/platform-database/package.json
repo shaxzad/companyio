@@ -1,7 +1,7 @@
 {
   "name": "@companyio/platform-database",
   "version": "0.1.4",
-  "description": "Shared MongoDB connection and product database conventions",
+  "description": "Shared PostgreSQL connection conventions",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -20,7 +20,7 @@
     "test": "tsc --noEmit"
   },
   "dependencies": {
-    "mongodb": "^6.3.0"
+    "pg": "^8.23.0"
   },
   "devDependencies": {
     "typescript": "^5.3.3"

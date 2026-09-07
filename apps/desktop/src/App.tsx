@@ -442,7 +442,7 @@ const InterviewWorkspace: React.FC = () => {
 
             <div className="settings-row">
               <span>Database</span>
-              <span className="settings-value">MongoDB Atlas</span>
+              <span className="settings-value">PostgreSQL</span>
             </div>
           </div>
         )}

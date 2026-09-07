@@ -1,20 +1,12 @@
-import { Db, MongoClient } from 'mongodb';
-
-export type ProductDatabase = 'identity' | 'school_erp' | 'interview_copilot' | 'crm';
+import { Pool, type PoolConfig } from 'pg';
 
 export type DatabaseConfig = {
-  uri: string;
-  databasePrefix?: string;
+  connectionString: string;
+  max?: number;
 };
 
-export const productDatabaseName = (product: ProductDatabase, prefix = 'company') =>
-  `${prefix}_${product}`;
-
-export const connectProductDatabase = async (
-  config: DatabaseConfig,
-  product: ProductDatabase
-): Promise<{ client: MongoClient; db: Db }> => {
-  const client = new MongoClient(config.uri);
-  await client.connect();
-  return { client, db: client.db(productDatabaseName(product, config.databasePrefix)) };
+export const connectProductDatabase = async (config: DatabaseConfig): Promise<Pool> => {
+  const pool = new Pool(config as PoolConfig);
+  await pool.query('SELECT 1');
+  return pool;
 };
