@@ -1,6 +1,6 @@
 {
   "name": "@companyio/platform-database",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Shared PostgreSQL connection conventions",
   "type": "module",
   "main": "dist/index.js",
