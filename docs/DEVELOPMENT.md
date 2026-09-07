@@ -56,7 +56,7 @@ Add to `.vscode/launch.json`:
 ### API
 
 - Fastify
-- MongoDB/Mongoose
+- PostgreSQL/Prisma
 - TypeScript
 - Zod
 

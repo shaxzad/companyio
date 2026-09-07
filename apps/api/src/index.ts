@@ -1,41 +1,28 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import dotenv from 'dotenv';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
-import { Collection, MongoClient } from 'mongodb';
+import { PrismaClient, type User as DatabaseUser } from './generated/prisma/client.ts';
 import {
-  AuthSession,
   SignInSchema,
   SignUpSchema,
   UpdateProfileSchema,
-  User,
+  type AuthSession,
+  type User as AuthUser,
 } from '@companyio/auth-contracts';
 
 dotenv.config({ path: new URL('../../../.env', import.meta.url) });
 
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) throw new Error('DATABASE_URL is required');
+
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
 const scrypt = promisify(scryptCallback);
-type UserRecord = User & { passwordHash: string };
-type BusinessRecord = { id: string; name: string; slug: string; createdAt: string };
-type BranchRecord = { id: string; main_business_id: string; name: string; createdAt: string };
-type SessionRecord = { accessToken: string; userId: string; expiresAt: number };
 
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: true });
-
-const mongoClient = new MongoClient(process.env.MONGODB_URI ?? 'mongodb://localhost:27017');
-await mongoClient.connect();
-const database = mongoClient.db(process.env.MONGODB_DATABASE ?? 'interview_copilot');
-const users: Collection<UserRecord> = database.collection('users');
-const businesses: Collection<BusinessRecord> = database.collection('businesses');
-const branches: Collection<BranchRecord> = database.collection('branches');
-const sessions: Collection<SessionRecord> = database.collection('sessions');
-
-await Promise.all([
-  users.createIndex({ email: 1 }, { unique: true }),
-  sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
-  branches.createIndex({ main_business_id: 1 }),
-]);
 
 const hashPassword = async (password: string, salt = randomBytes(16).toString('hex')) => {
   const derivedKey = (await scrypt(password, salt, 64)) as Buffer;
@@ -50,29 +37,42 @@ const verifyPassword = async (password: string, storedHash: string) => {
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 };
 
-const publicUser = (record: UserRecord): User => {
-  const {
-    passwordHash: _passwordHash,
-    _id: _mongoId,
-    ...user
-  } = record as UserRecord & { _id?: unknown };
-  return user;
-};
+const publicUser = (record: DatabaseUser): AuthUser => ({
+  id: record.id,
+  email: record.email,
+  name: record.name,
+  ...(record.firstName ? { firstName: record.firstName } : {}),
+  ...(record.lastName ? { lastName: record.lastName } : {}),
+  ...(record.phone ? { phone: record.phone } : {}),
+  ...(record.bio ? { bio: record.bio } : {}),
+  ...(record.facebookUrl ? { facebookUrl: record.facebookUrl } : {}),
+  ...(record.xUrl ? { xUrl: record.xUrl } : {}),
+  ...(record.linkedinUrl ? { linkedinUrl: record.linkedinUrl } : {}),
+  ...(record.instagramUrl ? { instagramUrl: record.instagramUrl } : {}),
+  main_business_id: record.main_business_id,
+  branch_id: record.branch_id,
+  ...(record.avatarUrl ? { avatarUrl: record.avatarUrl } : {}),
+  createdAt: record.createdAt.toISOString(),
+  updatedAt: record.updatedAt.toISOString(),
+});
 
-const createSession = async (user: User): Promise<AuthSession> => {
+const createSession = async (user: AuthUser): Promise<AuthSession> => {
   const accessToken = randomBytes(32).toString('hex');
   const expiresAt = Date.now() + 60 * 60 * 1000;
-  await sessions.insertOne({ accessToken, userId: user.id, expiresAt });
+  await prisma.session.create({
+    data: { accessToken, userId: user.id, expiresAt: new Date(expiresAt) },
+  });
   return { accessToken, expiresAt, user };
 };
 
 const getAuthenticatedUser = async (authorization?: string) => {
   const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : '';
   if (!token) return null;
-  const session = await sessions.findOne({ accessToken: token, expiresAt: { $gt: Date.now() } });
-  if (!session) return null;
-  const user = await users.findOne({ id: session.userId });
-  return user ? publicUser(user) : null;
+  const session = await prisma.session.findFirst({
+    where: { accessToken: token, expiresAt: { gt: new Date() } },
+    include: { user: true },
+  });
+  return session ? publicUser(session.user) : null;
 };
 
 app.get('/health', async () => ({ status: 'ok', timestamp: new Date() }));
@@ -81,54 +81,54 @@ app.get('/api/v1', async () => ({ message: 'Interview Copilot API v1', version: 
 app.post('/api/v1/auth/sign-up', async (request, reply) => {
   const input = SignUpSchema.parse(request.body);
   const email = input.email.toLowerCase();
-  const now = new Date().toISOString();
-  const main_business_id = randomUUID();
-  const branch_id = randomUUID();
-  const user: User = {
-    id: randomUUID(),
-    email,
-    name: input.name,
-    main_business_id,
-    branch_id,
-    createdAt: now,
-    updatedAt: now,
-  };
+  const now = new Date();
+  const mainBusinessId = randomUUID();
+  const branchId = randomUUID();
+  const userId = randomUUID();
   const slugBase = input.businessName
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 
   try {
-    await businesses.insertOne({
-      id: main_business_id,
-      name: input.businessName,
-      slug: `${slugBase}-${main_business_id.slice(0, 8)}`,
-      createdAt: now,
+    await prisma.$transaction(async (transaction) => {
+      await transaction.business.create({
+        data: {
+          id: mainBusinessId,
+          name: input.businessName,
+          slug: `${slugBase}-${mainBusinessId.slice(0, 8)}`,
+          createdAt: now,
+        },
+      });
+      await transaction.branch.create({
+        data: { id: branchId, main_business_id: mainBusinessId, name: 'Main Branch', createdAt: now },
+      });
+      await transaction.user.create({
+        data: {
+          id: userId,
+          email,
+          name: input.name,
+          main_business_id: mainBusinessId,
+          branch_id: branchId,
+          passwordHash: await hashPassword(input.password),
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
     });
-    await branches.insertOne({
-      id: branch_id,
-      main_business_id,
-      name: 'Main Branch',
-      createdAt: now,
-    });
-    await users.insertOne({ ...user, passwordHash: await hashPassword(input.password) });
   } catch (error) {
-    await Promise.all([
-      businesses.deleteOne({ id: main_business_id }),
-      branches.deleteOne({ id: branch_id }),
-      users.deleteOne({ id: user.id }),
-    ]);
-    if ((error as { code?: number }).code === 11000)
+    if ((error as { code?: string }).code === 'P2002')
       return reply.code(409).send({ message: 'An account with this email already exists.' });
     throw error;
   }
 
+  const user = publicUser(await prisma.user.findUniqueOrThrow({ where: { id: userId } }));
   return reply.code(201).send(await createSession(user));
 });
 
 app.post('/api/v1/auth/sign-in', async (request, reply) => {
   const input = SignInSchema.parse(request.body);
-  const record = await users.findOne({ email: input.email.toLowerCase() });
+  const record = await prisma.user.findUnique({ where: { email: input.email.toLowerCase() } });
   if (!record || !(await verifyPassword(input.password, record.passwordHash)))
     return reply.code(401).send({ message: 'Email or password is incorrect.' });
   return reply.send(await createSession(publicUser(record)));
@@ -142,7 +142,7 @@ app.get('/api/v1/auth/session', async (request, reply) => {
 
 app.post('/api/v1/auth/logout', async (request, reply) => {
   const token = request.headers.authorization?.replace(/^Bearer /, '');
-  if (token) await sessions.deleteOne({ accessToken: token });
+  if (token) await prisma.session.deleteMany({ where: { accessToken: token } });
   return reply.code(204).send();
 });
 
@@ -151,34 +151,32 @@ app.get('/api/v1/users/me', async (request, reply) => {
   if (!user) return reply.code(401).send({ message: 'Authentication required.' });
   return reply.send(user);
 });
+
 app.patch('/api/v1/users/me', async (request, reply) => {
   const user = await getAuthenticatedUser(request.headers.authorization);
   if (!user) return reply.code(401).send({ message: 'Authentication required.' });
   const input = UpdateProfileSchema.parse(request.body);
-  const updatedUser: User = {
-    ...user,
-    name: `${input.firstName} ${input.lastName}`,
-    ...input,
-    updatedAt: new Date().toISOString(),
-  };
   try {
-    await users.updateOne(
-      { id: user.id },
-      { $set: { ...input, name: updatedUser.name, updatedAt: updatedUser.updatedAt } }
-    );
+    const updatedRecord = await prisma.user.update({
+      where: { id: user.id },
+      data: { ...input, name: `${input.firstName} ${input.lastName}` },
+    });
+    const updatedUser = publicUser(updatedRecord);
+    return reply.send({ session: await createSession(updatedUser), user: updatedUser });
   } catch (error) {
-    if ((error as { code?: number }).code === 11000)
+    if ((error as { code?: string }).code === 'P2002')
       return reply.code(409).send({ message: 'An account with this email already exists.' });
     throw error;
   }
-  const session = await createSession(updatedUser);
-  return reply.send({ session, user: updatedUser });
 });
+
 app.get('/api/v1/organizations', async (request, reply) => {
   const user = await getAuthenticatedUser(request.headers.authorization);
   if (!user) return reply.code(401).send({ message: 'Authentication required.' });
-  const business = await businesses.findOne({ id: user.main_business_id });
-  const branch = await branches.findOne({ id: user.branch_id });
+  const [business, branch] = await Promise.all([
+    prisma.business.findUnique({ where: { id: user.main_business_id } }),
+    prisma.branch.findUnique({ where: { id: user.branch_id } }),
+  ]);
   return reply.send(
     business && branch
       ? [
@@ -204,7 +202,7 @@ const start = async () => {
     console.log('Server running at http://localhost:3000');
   } catch (error) {
     app.log.error(error);
-    await mongoClient.close();
+    await prisma.$disconnect();
     process.exit(1);
   }
 };

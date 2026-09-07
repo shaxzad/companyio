@@ -31,7 +31,7 @@ During development inside this monorepo, `workspace:*` links are used instead of
 @companyio/auth-fastify     Fastify request authentication boundary
 @companyio/platform-ui      Shared React application shell primitives
 @companyio/platform-tenancy Tenant context and request scope enforcement
-@companyio/platform-database Mongo connection and product database naming
+@companyio/platform-database PostgreSQL connection conventions
 ```
 
 ## Platform adapters

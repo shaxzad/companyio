@@ -25,9 +25,9 @@ This is a pnpm monorepo containing multiple related packages:
 
 - **Why Fastify**: Lightweight, fast, excellent plugin ecosystem, built-in validation support
 
-### Database: MongoDB
+### Database: PostgreSQL with Prisma
 
-- **Why MongoDB**: Flexible schema, good for varied interview data, Atlas for managed hosting
+- **Why PostgreSQL**: Strong relational constraints, transactions, reliable migrations, and mature managed hosting
 
 ### State Management: Zustand
 
@@ -53,7 +53,7 @@ This is a pnpm monorepo containing multiple related packages:
              │
              ▼
 ┌─────────────────────────┐
-│   MongoDB Atlas         │
+│   PostgreSQL            │
 │   Data Storage          │
 └─────────────────────────┘
 

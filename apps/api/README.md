@@ -1,6 +1,6 @@
 # CompanyIO API
 
-Fastify API providing MongoDB-backed authentication and organization endpoints.
+Fastify API providing PostgreSQL-backed authentication and organization endpoints through Prisma.
 
 ## Run
 
@@ -8,4 +8,4 @@ Fastify API providing MongoDB-backed authentication and organization endpoints.
 pnpm --filter @companyio/api dev
 ```
 
-Configure `MONGODB_URI`, `MONGODB_DATABASE`, `API_HOST`, and `API_PORT` in the root `.env` file. The API exposes password signup/sign-in, session restoration, logout, current-user, and organization endpoints under `/api/v1`.
+Configure `DATABASE_URL`, `API_HOST`, and `API_PORT` in the root `.env` file. Apply database migrations with `pnpm --filter @companyio/api exec prisma migrate dev`. The API exposes password signup/sign-in, session restoration, logout, current-user, and organization endpoints under `/api/v1`.

@@ -1,25 +1,22 @@
 # @companyio/platform-database
 
-MongoDB connection helper and shared product database naming conventions.
+PostgreSQL connection helper for shared platform services.
 
 ## Use
 
 ```ts
 import { connectProductDatabase } from '@companyio/platform-database';
 
-const { client, db } = await connectProductDatabase(
-  { uri: process.env.MONGODB_URI!, databasePrefix: 'company' },
-  'interview_copilot'
-);
+const pool = await connectProductDatabase({
+  connectionString: process.env.DATABASE_URL!,
+});
 
 try {
-  await db.collection('sessions').findOne({});
+  await pool.query('SELECT 1');
 } finally {
-  await client.close();
+  await pool.end();
 }
 ```
-
-Supported products are `identity`, `school_erp`, `interview_copilot`, and `crm`.
 
 ## Build
 

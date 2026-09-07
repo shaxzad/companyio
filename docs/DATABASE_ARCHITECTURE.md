@@ -2,7 +2,7 @@
 
 ## Recommended production layout
 
-Use one MongoDB cluster per environment, but separate databases by ownership boundary:
+Use one PostgreSQL database per environment, with schemas or separate databases by ownership boundary:
 
 ```text
 company_identity             Users, sessions, businesses, branches, memberships
@@ -41,8 +41,8 @@ Each product consumes released `@companyio/*` packages from the private npm regi
 
 ## Security and operations
 
-- Separate Mongo users and credentials per environment and product database.
-- Use MongoDB Atlas projects or clusters with network restrictions in production.
+- Separate PostgreSQL roles and credentials per environment and product database.
+- Use managed PostgreSQL with private networking and restricted access in production.
 - Encrypt backups and enable point-in-time recovery.
 - Keep identity data in the identity database; do not duplicate passwords in product databases.
 - Add indexes beginning with `main_business_id`, `branch_id`, then the product query fields.
