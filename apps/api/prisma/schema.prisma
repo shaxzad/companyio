@@ -17,37 +17,37 @@ model Business {
 }
 
 model Branch {
-  id              String   @id
+  id               String   @id
   main_business_id String
-  name            String
-  createdAt       DateTime @default(now())
-  business        Business @relation(fields: [main_business_id], references: [id], onDelete: Cascade)
-  users           User[]
+  name             String
+  createdAt        DateTime @default(now())
+  business         Business @relation(fields: [main_business_id], references: [id], onDelete: Cascade)
+  users            User[]
 
   @@index([main_business_id])
 }
 
 model User {
-  id              String    @id
-  email           String    @unique
-  name            String
-  passwordHash    String
-  firstName       String?
-  lastName        String?
-  phone           String?
-  bio             String?
-  facebookUrl     String?
-  xUrl            String?
-  linkedinUrl     String?
-  instagramUrl    String?
+  id               String    @id
+  email            String    @unique
+  name             String
+  passwordHash     String
+  firstName        String?
+  lastName         String?
+  phone            String?
+  bio              String?
+  facebookUrl      String?
+  xUrl             String?
+  linkedinUrl      String?
+  instagramUrl     String?
   main_business_id String
-  branch_id       String
-  avatarUrl       String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  business        Business  @relation("UserBusiness", fields: [main_business_id], references: [id], onDelete: Cascade)
-  branch          Branch    @relation(fields: [branch_id], references: [id], onDelete: Cascade)
-  sessions        Session[]
+  branch_id        String
+  avatarUrl        String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  business         Business  @relation("UserBusiness", fields: [main_business_id], references: [id], onDelete: Cascade)
+  branch           Branch    @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+  sessions         Session[]
 
   @@index([main_business_id])
   @@index([branch_id])

@@ -351,10 +351,10 @@ This monorepo contains the following npm packages that can be used independently
 
 ### Data Packages
 
-| Package                        | Description                                                | Key Dependencies                                         |
-| ------------------------------ | ---------------------------------------------------------- | -------------------------------------------------------- |
-| `@companyio/platform-database` | Shared PostgreSQL connection conventions | `pg`                                                |
-| `@companyio/platform-tenancy`  | Shared SaaS tenant context and Fastify scope enforcement   | `@companyio/auth-contracts`, `fastify`, `fastify-plugin` |
+| Package                        | Description                                              | Key Dependencies                                         |
+| ------------------------------ | -------------------------------------------------------- | -------------------------------------------------------- |
+| `@companyio/platform-database` | Shared PostgreSQL connection conventions                 | `pg`                                                     |
+| `@companyio/platform-tenancy`  | Shared SaaS tenant context and Fastify scope enforcement | `@companyio/auth-contracts`, `fastify`, `fastify-plugin` |
 
 ### AI Packages
 

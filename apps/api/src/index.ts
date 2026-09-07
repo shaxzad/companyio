@@ -101,7 +101,12 @@ app.post('/api/v1/auth/sign-up', async (request, reply) => {
         },
       });
       await transaction.branch.create({
-        data: { id: branchId, main_business_id: mainBusinessId, name: 'Main Branch', createdAt: now },
+        data: {
+          id: branchId,
+          main_business_id: mainBusinessId,
+          name: 'Main Branch',
+          createdAt: now,
+        },
       });
       await transaction.user.create({
         data: {

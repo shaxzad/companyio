@@ -43,7 +43,9 @@ describe('PostgreSQL auth data model', () => {
 
     expect(await prisma!.user.count({ where: { id: userId } })).toBe(1);
     expect(await prisma!.business.count({ where: { id: businessId } })).toBe(1);
-    expect(await prisma!.branch.count({ where: { id: branchId, main_business_id: businessId } })).toBe(1);
+    expect(
+      await prisma!.branch.count({ where: { id: branchId, main_business_id: businessId } })
+    ).toBe(1);
     expect(await prisma!.session.findUnique({ where: { accessToken, userId } })).toBeTruthy();
 
     await prisma!.$transaction([
