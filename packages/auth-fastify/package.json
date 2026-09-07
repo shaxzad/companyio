@@ -1,6 +1,6 @@
 {
   "name": "@companyio/auth-fastify",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Fastify authentication boundary for company APIs",
   "type": "module",
   "main": "dist/index.js",
