@@ -134,14 +134,48 @@ app.post('/api/v1/auth/sign-up', async (request, reply) => {
       });
       await transaction.fuelType.createMany({
         data: [
-          { id: petrolId, businessId: mainBusinessId, name: 'Petrol', code: 'PETROL', sellingPrice: 280, purchasePrice: 265, minimumStock: 2000, reorderLevel: 5000 },
-          { id: dieselId, businessId: mainBusinessId, name: 'Diesel', code: 'DIESEL', sellingPrice: 285, purchasePrice: 270, minimumStock: 2000, reorderLevel: 5000 },
+          {
+            id: petrolId,
+            businessId: mainBusinessId,
+            name: 'Petrol',
+            code: 'PETROL',
+            sellingPrice: 280,
+            purchasePrice: 265,
+            minimumStock: 2000,
+            reorderLevel: 5000,
+          },
+          {
+            id: dieselId,
+            businessId: mainBusinessId,
+            name: 'Diesel',
+            code: 'DIESEL',
+            sellingPrice: 285,
+            purchasePrice: 270,
+            minimumStock: 2000,
+            reorderLevel: 5000,
+          },
         ],
       });
       await transaction.tank.createMany({
         data: [
-          { id: randomUUID(), stationId, fuelTypeId: petrolId, name: 'Petrol Tank 01', capacity: 20000, openingStock: 0, currentStock: 0 },
-          { id: randomUUID(), stationId, fuelTypeId: dieselId, name: 'Diesel Tank 02', capacity: 20000, openingStock: 0, currentStock: 0 },
+          {
+            id: randomUUID(),
+            stationId,
+            fuelTypeId: petrolId,
+            name: 'Petrol Tank 01',
+            capacity: 20000,
+            openingStock: 0,
+            currentStock: 0,
+          },
+          {
+            id: randomUUID(),
+            stationId,
+            fuelTypeId: dieselId,
+            name: 'Diesel Tank 02',
+            capacity: 20000,
+            openingStock: 0,
+            currentStock: 0,
+          },
         ],
       });
     });

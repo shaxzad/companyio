@@ -6,10 +6,7 @@ export default function SignUp() {
   const { client } = useAuth();
   return (
     <>
-      <PageMeta
-        title="Fuel Management Sign Up"
-        description="Create your fuel management account"
-      />
+      <PageMeta title="Fuel Management Sign Up" description="Create your fuel management account" />
       <AuthLayout>
         <SignUpForm client={client} businessName="Fuel Management" />
       </AuthLayout>

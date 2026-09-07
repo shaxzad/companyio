@@ -109,12 +109,64 @@ export default function App() {
               />
             }
           />
-          <Route path="/customers" element={<FuelModulePage title="Customers" description="Manage customer records, contacts, and account activity." />} />
-          <Route path="/vehicles" element={<FuelModulePage title="Vehicles" description="Manage organization vehicles, drivers, fuel types, and vehicle history." actionLabel="Add vehicle" />} />
-          <Route path="/credit-accounts" element={<FuelModulePage title="Credit accounts" description="Review organization credit limits, balances, statements, and overdue accounts." />} />
-          <Route path="/payments" element={<FuelModulePage title="Payments" description="Record customer payments and reconcile outstanding organization balances." actionLabel="Record payment" />} />
-          <Route path="/expenses" element={<FuelModulePage title="Expenses" description="Record station expenses, payment accounts, approvals, and receipts." actionLabel="Add expense" />} />
-          <Route path="/reports" element={<FuelModulePage title="Reports" description="Review sales, inventory, fleet, customer, and financial reports." actionLabel="Export report" />} />
+          <Route
+            path="/customers"
+            element={
+              <FuelModulePage
+                title="Customers"
+                description="Manage customer records, contacts, and account activity."
+              />
+            }
+          />
+          <Route
+            path="/vehicles"
+            element={
+              <FuelModulePage
+                title="Vehicles"
+                description="Manage organization vehicles, drivers, fuel types, and vehicle history."
+                actionLabel="Add vehicle"
+              />
+            }
+          />
+          <Route
+            path="/credit-accounts"
+            element={
+              <FuelModulePage
+                title="Credit accounts"
+                description="Review organization credit limits, balances, statements, and overdue accounts."
+              />
+            }
+          />
+          <Route
+            path="/payments"
+            element={
+              <FuelModulePage
+                title="Payments"
+                description="Record customer payments and reconcile outstanding organization balances."
+                actionLabel="Record payment"
+              />
+            }
+          />
+          <Route
+            path="/expenses"
+            element={
+              <FuelModulePage
+                title="Expenses"
+                description="Record station expenses, payment accounts, approvals, and receipts."
+                actionLabel="Add expense"
+              />
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <FuelModulePage
+                title="Reports"
+                description="Review sales, inventory, fleet, customer, and financial reports."
+                actionLabel="Export report"
+              />
+            }
+          />
         </Route>
 
         <Route path="/signin" element={<SignIn />} />

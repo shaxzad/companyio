@@ -6,10 +6,7 @@ export default function SignIn() {
   const { client } = useAuth();
   return (
     <>
-      <PageMeta
-        title="Fuel Management Sign In"
-        description="Sign in to Fuel Management"
-      />
+      <PageMeta title="Fuel Management Sign In" description="Sign in to Fuel Management" />
       <AuthLayout>
         <SignInForm client={client} />
       </AuthLayout>
