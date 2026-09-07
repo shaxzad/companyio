@@ -11,24 +11,7 @@ import NotFound from './pages/OtherPage/NotFound';
 import UserProfiles from './pages/UserProfiles';
 import Home from './pages/Dashboard/Home';
 import FuelModulePage from './pages/FuelModulePage';
-
-function ModulePlaceholder({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600">
-          Fuel operations
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">{title}</h1>
-        <p className="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">{description}</p>
-      </div>
-      <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
-        This module is ready for its data workflow. Connect it to the Fuel API when the domain
-        endpoints are available.
-      </div>
-    </div>
-  );
-}
+import FuelRecordPage from './pages/FuelRecordPage';
 
 function RequireAuth({ children }: PropsWithChildren) {
   const { user, isLoading } = useAuth();
@@ -56,34 +39,77 @@ export default function App() {
           <Route
             path="/sales"
             element={
-              <ModulePlaceholder
+              <FuelRecordPage
                 title="Daily sales"
                 description="Capture opening and closing meter readings and reconcile litres sold by nozzle and shift."
+                endpoint="/fuel/sales"
+                fields={[
+                  { name: 'stationId', label: 'Station', required: true },
+                  { name: 'fuelTypeId', label: 'Fuel type', required: true },
+                  { name: 'tankId', label: 'Tank', required: true },
+                  {
+                    name: 'saleType',
+                    label: 'Sale type',
+                    required: true,
+                    options: [
+                      { value: 'CASH', label: 'Cash' },
+                      { value: 'CARD', label: 'Card / bank' },
+                      { value: 'CREDIT', label: 'Credit' },
+                    ],
+                  },
+                  { name: 'litres', label: 'Litres', type: 'number', required: true },
+                  { name: 'unitPrice', label: 'Selling price per litre', type: 'number' },
+                  { name: 'openingMeter', label: 'Opening meter', type: 'number' },
+                  { name: 'closingMeter', label: 'Closing meter', type: 'number' },
+                  { name: 'organizationId', label: 'Organization' },
+                  { name: 'vehicleId', label: 'Vehicle' },
+                ]}
               />
             }
           />
           <Route
             path="/fleet-sales"
             element={
-              <ModulePlaceholder
+              <FuelRecordPage
                 title="Fleet sales"
                 description="Issue fuel to an organization vehicle, post the credit sale, and keep its history traceable."
+                endpoint="/fuel/sales"
+                defaults={{ saleType: 'CREDIT' }}
+                fields={[
+                  { name: 'stationId', label: 'Station', required: true },
+                  { name: 'fuelTypeId', label: 'Fuel type', required: true },
+                  { name: 'tankId', label: 'Tank', required: true },
+                  { name: 'organizationId', label: 'Organization', required: true },
+                  { name: 'vehicleId', label: 'Vehicle', required: true },
+                  { name: 'litres', label: 'Litres', type: 'number', required: true },
+                  { name: 'unitPrice', label: 'Selling price per litre', type: 'number' },
+                ]}
               />
             }
           />
           <Route
             path="/organizations"
             element={
-              <ModulePlaceholder
+              <FuelRecordPage
                 title="Organizations"
                 description="Manage credit customers, vehicles, limits, statements, and payment history."
+                endpoint="/fuel/organizations"
+                fields={[
+                  { name: 'name', label: 'Organization name', required: true },
+                  { name: 'contactName', label: 'Contact person' },
+                  { name: 'phone', label: 'Phone' },
+                  { name: 'email', label: 'Billing email', type: 'email' },
+                  { name: 'address', label: 'Address' },
+                  { name: 'paymentTerms', label: 'Payment terms' },
+                  { name: 'creditLimit', label: 'Credit limit', type: 'number' },
+                ]}
               />
             }
           />
           <Route
             path="/inventory"
             element={
-              <ModulePlaceholder
+              <FuelModulePage
                 title="Inventory"
                 description="Track tank stock, receipts, sales, adjustments, and physical reconciliation."
               />
@@ -92,10 +118,25 @@ export default function App() {
           <Route
             path="/fuel-purchases"
             element={
-              <FuelModulePage
+              <FuelRecordPage
                 title="Fuel purchases"
                 description="Record tanker deliveries, landed cost, supplier balances, and stock increases."
-                actionLabel="Record purchase"
+                endpoint="/fuel/receipts"
+                fields={[
+                  { name: 'stationId', label: 'Station', required: true },
+                  { name: 'supplier', label: 'Supplier', required: true },
+                  { name: 'fuelTypeId', label: 'Fuel type', required: true },
+                  { name: 'tankId', label: 'Tank', required: true },
+                  { name: 'litres', label: 'Quantity in litres', type: 'number', required: true },
+                  {
+                    name: 'purchasePrice',
+                    label: 'Purchase price per litre',
+                    type: 'number',
+                    required: true,
+                  },
+                  { name: 'tankerNumber', label: 'Tanker number' },
+                  { name: 'invoiceNumber', label: 'Invoice number' },
+                ]}
               />
             }
           />
@@ -103,7 +144,7 @@ export default function App() {
           <Route
             path="/assets"
             element={
-              <ModulePlaceholder
+              <FuelModulePage
                 title="Pumps & tanks"
                 description="Configure stations, pumps, nozzles, tanks, capacities, and fuel assignments."
               />
@@ -112,19 +153,35 @@ export default function App() {
           <Route
             path="/customers"
             element={
-              <FuelModulePage
+              <FuelRecordPage
                 title="Customers"
                 description="Manage customer records, contacts, and account activity."
+                endpoint="/fuel/organizations"
+                fields={[
+                  { name: 'name', label: 'Customer / organization name', required: true },
+                  { name: 'contactName', label: 'Contact person' },
+                  { name: 'phone', label: 'Phone' },
+                  { name: 'email', label: 'Email', type: 'email' },
+                  { name: 'address', label: 'Address' },
+                ]}
               />
             }
           />
           <Route
             path="/vehicles"
             element={
-              <FuelModulePage
+              <FuelRecordPage
                 title="Vehicles"
                 description="Manage organization vehicles, drivers, fuel types, and vehicle history."
-                actionLabel="Add vehicle"
+                endpoint={'/fuel/organizations/${organizationId}/vehicles'}
+                fields={[
+                  { name: 'organizationId', label: 'Organization', required: true },
+                  { name: 'registration', label: 'Registration number', required: true },
+                  { name: 'type', label: 'Vehicle type' },
+                  { name: 'makeModel', label: 'Make / model' },
+                  { name: 'driver', label: 'Driver' },
+                  { name: 'notes', label: 'Notes' },
+                ]}
               />
             }
           />
@@ -140,20 +197,55 @@ export default function App() {
           <Route
             path="/payments"
             element={
-              <FuelModulePage
+              <FuelRecordPage
                 title="Payments"
                 description="Record customer payments and reconcile outstanding organization balances."
-                actionLabel="Record payment"
+                endpoint="/fuel/payments"
+                fields={[
+                  { name: 'stationId', label: 'Station', required: true },
+                  { name: 'organizationId', label: 'Organization', required: true },
+                  { name: 'amount', label: 'Amount', type: 'number', required: true },
+                  {
+                    name: 'method',
+                    label: 'Payment method',
+                    required: true,
+                    options: [
+                      { value: 'CASH', label: 'Cash' },
+                      { value: 'BANK', label: 'Bank' },
+                      { value: 'CARD', label: 'Card' },
+                      { value: 'TRANSFER', label: 'Transfer' },
+                    ],
+                  },
+                  { name: 'reference', label: 'Reference' },
+                ]}
               />
             }
           />
           <Route
             path="/expenses"
             element={
-              <FuelModulePage
+              <FuelRecordPage
                 title="Expenses"
                 description="Record station expenses, payment accounts, approvals, and receipts."
-                actionLabel="Add expense"
+                endpoint="/fuel/expenses"
+                fields={[
+                  { name: 'stationId', label: 'Station', required: true },
+                  { name: 'category', label: 'Category', required: true },
+                  { name: 'description', label: 'Description', required: true },
+                  { name: 'amount', label: 'Amount', type: 'number', required: true },
+                  {
+                    name: 'method',
+                    label: 'Payment method',
+                    required: true,
+                    options: [
+                      { value: 'CASH', label: 'Cash' },
+                      { value: 'BANK', label: 'Bank' },
+                      { value: 'CARD', label: 'Card' },
+                      { value: 'TRANSFER', label: 'Transfer' },
+                    ],
+                  },
+                  { name: 'reference', label: 'Reference' },
+                ]}
               />
             }
           />
