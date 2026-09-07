@@ -6,7 +6,13 @@ import Label from '../form/Label';
 import Input from '../form/input/InputField';
 import Checkbox from '../form/input/Checkbox';
 
-export default function SignUpForm({ client }: { client: AuthClient }) {
+export default function SignUpForm({
+  client,
+  businessName = 'Interview Copilot',
+}: {
+  client: AuthClient;
+  businessName?: string;
+}) {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [firstName, setFirstName] = useState('');
@@ -26,7 +32,7 @@ export default function SignUpForm({ client }: { client: AuthClient }) {
         name: `${firstName} ${lastName}`.trim(),
         email,
         password,
-        businessName: 'Interview Copilot',
+        businessName,
       });
       navigate('/', { replace: true });
     } catch (caught) {
