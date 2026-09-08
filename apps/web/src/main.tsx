@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client';
 import { ThemeProvider, AppWrapper } from '@companyio/platform-ui';
 import { AuthClient, createBrowserStorage } from '@companyio/auth-client';
 import { AuthProvider } from '@companyio/auth-react';
-import './index.css';
 import 'swiper/css/bundle';
 import 'flatpickr/dist/flatpickr.css';
 import App from './App.tsx';

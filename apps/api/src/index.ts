@@ -6,6 +6,7 @@ import { randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } fr
 import { promisify } from 'node:util';
 import { PrismaClient, type User as DatabaseUser } from './generated/prisma/client.ts';
 import { registerFuelRoutes } from './fuel-routes.ts';
+import { registerUserRoutes } from './user-routes.ts';
 import {
   SignInSchema,
   SignUpSchema,
@@ -42,6 +43,8 @@ const publicUser = (record: DatabaseUser): AuthUser => ({
   id: record.id,
   email: record.email,
   name: record.name,
+  role: record.role,
+  isActive: record.isActive,
   ...(record.firstName ? { firstName: record.firstName } : {}),
   ...(record.lastName ? { lastName: record.lastName } : {}),
   ...(record.phone ? { phone: record.phone } : {}),
@@ -73,7 +76,7 @@ const getAuthenticatedUser = async (authorization?: string) => {
     where: { accessToken: token, expiresAt: { gt: new Date() } },
     include: { user: true },
   });
-  return session ? publicUser(session.user) : null;
+  return session?.user.isActive ? publicUser(session.user) : null;
 };
 
 app.get('/health', async () => ({ status: 'ok', timestamp: new Date() }));
@@ -117,6 +120,8 @@ app.post('/api/v1/auth/sign-up', async (request, reply) => {
           main_business_id: mainBusinessId,
           branch_id: branchId,
           passwordHash: await hashPassword(input.password),
+          role: 'owner',
+          isActive: true,
           createdAt: now,
           updatedAt: now,
         },
@@ -194,6 +199,8 @@ app.post('/api/v1/auth/sign-in', async (request, reply) => {
   const record = await prisma.user.findUnique({ where: { email: input.email.toLowerCase() } });
   if (!record || !(await verifyPassword(input.password, record.passwordHash)))
     return reply.code(401).send({ message: 'Email or password is incorrect.' });
+  if (!record.isActive)
+    return reply.code(403).send({ message: 'This account has been deactivated.' });
   return reply.send(await createSession(publicUser(record)));
 });
 
@@ -256,6 +263,7 @@ app.get('/api/v1/organizations', async (request, reply) => {
   );
 });
 
+registerUserRoutes(app, prisma, getAuthenticatedUser, publicUser, hashPassword);
 registerFuelRoutes(app, prisma, getAuthenticatedUser);
 
 const start = async () => {

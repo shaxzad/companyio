@@ -1,9 +1,21 @@
 import { z } from 'zod';
 
+export const FuelRoleSchema = z.enum(['owner', 'manager', 'staff', 'accountant']);
+export type FuelRole = z.infer<typeof FuelRoleSchema>;
+
+export const ASSIGNABLE_FUEL_ROLES = ['manager', 'staff', 'accountant'] as const;
+export const AssignableFuelRoleSchema = z.enum(ASSIGNABLE_FUEL_ROLES);
+export type AssignableFuelRole = z.infer<typeof AssignableFuelRoleSchema>;
+
+export const isOwnerRole = (role: FuelRole) => role === 'owner';
+export const canApprove = (role: FuelRole) => role === 'owner' || role === 'manager';
+
 export const UserSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   name: z.string().min(1),
+  role: FuelRoleSchema,
+  isActive: z.boolean(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   phone: z.string().optional(),
@@ -106,3 +118,36 @@ export const CreateInvitationSchema = z.object({
 });
 
 export type CreateInvitation = z.infer<typeof CreateInvitationSchema>;
+
+export const CreateManagedUserSchema = z.object({
+  name: z.string().min(1).max(80),
+  email: z.string().email(),
+  password: z.string().min(8).max(128),
+  role: AssignableFuelRoleSchema,
+});
+
+export type CreateManagedUserInput = z.infer<typeof CreateManagedUserSchema>;
+
+export const UpdateManagedUserSchema = z.object({
+  name: z.string().min(1).max(80).optional(),
+  email: z.string().email().optional(),
+  password: z.string().min(8).max(128).optional(),
+  role: AssignableFuelRoleSchema.optional(),
+  isActive: z.boolean().optional(),
+});
+
+export type UpdateManagedUserInput = z.infer<typeof UpdateManagedUserSchema>;
+
+export const authErrorMessage = (caught: unknown, fallback = 'The request could not be completed.') => {
+  if (
+    caught &&
+    typeof caught === 'object' &&
+    'message' in caught &&
+    typeof caught.message === 'string' &&
+    caught.message.length > 0
+  ) {
+    return caught.message;
+  }
+  if (caught instanceof Error && caught.message) return caught.message;
+  return fallback;
+};

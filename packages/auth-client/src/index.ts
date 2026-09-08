@@ -2,9 +2,13 @@ import {
   AuthClientConfig,
   AuthError,
   AuthSession,
+  CreateManagedUserInput,
+  CreateManagedUserSchema,
   Organization,
   SignInInput,
   SignUpInput,
+  UpdateManagedUserInput,
+  UpdateManagedUserSchema,
   UpdateProfileInput,
   UpdateProfileSchema,
   SessionSchema,
@@ -145,6 +149,29 @@ export class AuthClient {
 
   async getOrganizations(): Promise<Organization[]> {
     return this.request<Organization[]>('/organizations');
+  }
+
+  async listUsers(): Promise<User[]> {
+    const users = await this.request<User[]>('/users');
+    return users.map((user) => UserSchema.parse(user));
+  }
+
+  async createUser(input: CreateManagedUserInput): Promise<User> {
+    return UserSchema.parse(
+      await this.request<User>('/users', {
+        method: 'POST',
+        body: JSON.stringify(CreateManagedUserSchema.parse(input)),
+      })
+    );
+  }
+
+  async updateUser(id: string, input: UpdateManagedUserInput): Promise<User> {
+    return UserSchema.parse(
+      await this.request<User>(`/users/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(UpdateManagedUserSchema.parse(input)),
+      })
+    );
   }
 
   async signOut(): Promise<void> {
