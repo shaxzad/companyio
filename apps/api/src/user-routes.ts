@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import {
   CreateManagedUserSchema,
@@ -10,8 +11,13 @@ type HashPassword = (password: string, salt?: string) => Promise<string>;
 type PublicUser = (record: DatabaseUser) => AuthUser;
 type GetAuthenticatedUser = (authorization?: string) => Promise<AuthUser | null>;
 
-const forbidden = (message: string) => ({ message });
-const notFound = { message: 'User not found.' };
+type AuthErrorBody = { message: string };
+type OwnerAuth =
+  | { ok: true; user: AuthUser }
+  | { ok: false; error: { status: 401 | 403; body: AuthErrorBody } };
+
+const forbidden = (message: string): AuthErrorBody => ({ message });
+const notFound: AuthErrorBody = { message: 'User not found.' };
 
 export const registerUserRoutes = (
   app: FastifyInstance,
@@ -20,12 +26,16 @@ export const registerUserRoutes = (
   publicUser: PublicUser,
   hashPassword: HashPassword
 ) => {
-  const requireOwner = async (authorization?: string) => {
+  const requireOwner = async (authorization?: string): Promise<OwnerAuth> => {
     const user = await getAuthenticatedUser(authorization);
-    if (!user) return { error: { status: 401 as const, body: { message: 'Authentication required.' } } };
+    if (!user)
+      return { ok: false, error: { status: 401, body: { message: 'Authentication required.' } } };
     if (user.role !== 'owner')
-      return { error: { status: 403 as const, body: forbidden('Only the owner can manage users.') } };
-    return { user };
+      return {
+        ok: false,
+        error: { status: 403, body: forbidden('Only the owner can manage users.') },
+      };
+    return { ok: true, user };
   };
 
   const businessUser = (owner: AuthUser, id: string) =>
@@ -35,7 +45,7 @@ export const registerUserRoutes = (
 
   app.get('/api/v1/users', async (request, reply) => {
     const auth = await requireOwner(request.headers.authorization);
-    if ('error' in auth) return reply.code(auth.error.status).send(auth.error.body);
+    if (!auth.ok) return reply.code(auth.error.status).send(auth.error.body);
     const users = await prisma.user.findMany({
       where: { main_business_id: auth.user.main_business_id },
       orderBy: { createdAt: 'asc' },
@@ -45,7 +55,7 @@ export const registerUserRoutes = (
 
   app.post('/api/v1/users', async (request, reply) => {
     const auth = await requireOwner(request.headers.authorization);
-    if ('error' in auth) return reply.code(auth.error.status).send(auth.error.body);
+    if (!auth.ok) return reply.code(auth.error.status).send(auth.error.body);
     const input = CreateManagedUserSchema.parse(request.body);
     const email = input.email.toLowerCase();
     const now = new Date();
@@ -53,7 +63,7 @@ export const registerUserRoutes = (
     try {
       const created = await prisma.user.create({
         data: {
-          id: crypto.randomUUID(),
+          id: randomUUID(),
           email,
           name: input.name,
           role: input.role,
@@ -75,7 +85,7 @@ export const registerUserRoutes = (
 
   app.patch('/api/v1/users/:id', async (request, reply) => {
     const auth = await requireOwner(request.headers.authorization);
-    if ('error' in auth) return reply.code(auth.error.status).send(auth.error.body);
+    if (!auth.ok) return reply.code(auth.error.status).send(auth.error.body);
     const { id } = request.params as { id: string };
     const input = UpdateManagedUserSchema.parse(request.body);
     const record = await businessUser(auth.user, id);

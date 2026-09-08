@@ -41,20 +41,62 @@ export async function getFuelDashboard(): Promise<FuelDashboard> {
   return fuelRequest<FuelDashboard>('/fuel/dashboard');
 }
 
-export type Station = { id: string; name: string; code: string };
-export type FuelType = { id: string; name: string; sellingPrice: string; purchasePrice: string };
+export type Station = {
+  id: string;
+  name: string;
+  code: string;
+  address?: string | null;
+  city?: string | null;
+  logoUrl?: string | null;
+};
+export type FuelType = {
+  id: string;
+  name: string;
+  code: string;
+  sellingPrice: string;
+  purchasePrice: string;
+  minimumStock?: string;
+  reorderLevel?: string;
+  active?: boolean;
+};
 export type Organization = {
   id: string;
   name: string;
   vehicles: Array<{ id: string; registration: string }>;
 };
 export type StationAssets = {
-  tanks: Array<{ id: string; name: string; fuelTypeId: string }>;
-  pumps: unknown[];
+  tanks: Array<{
+    id: string;
+    name: string;
+    fuelTypeId: string;
+    capacity: string | number;
+    openingStock: string | number;
+    currentStock: string | number;
+    active: boolean;
+    fuelType: { id: string; name: string };
+  }>;
+  pumps: Array<{
+    id: string;
+    number: string;
+    name: string;
+    active: boolean;
+    nozzles: Array<{
+      id: string;
+      number: string;
+      fuelTypeId: string;
+      tankId: string | null;
+      openingMeter: string | number;
+      currentMeter: string | number;
+      active: boolean;
+      fuelType: { name: string };
+      tank?: { id: string; name: string } | null;
+    }>;
+  }>;
 };
 
 export const getStations = () => fuelRequest<Station[]>('/fuel/stations');
-export const getFuelTypes = () => fuelRequest<FuelType[]>('/fuel/types');
+export const getFuelTypes = (includeInactive = false) =>
+  fuelRequest<FuelType[]>(`/fuel/types${includeInactive ? '?includeInactive=true' : ''}`);
 export const getOrganizations = () => fuelRequest<Organization[]>('/fuel/organizations');
 export const getStationAssets = (stationId: string) =>
   fuelRequest<StationAssets>(`/fuel/stations/${stationId}/assets`);

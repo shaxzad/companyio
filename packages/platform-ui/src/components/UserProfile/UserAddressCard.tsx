@@ -42,6 +42,7 @@ export default function UserAddressCard({ profile, onChange, onSave, isSaving }:
             <div>
               <Label>Main Business ID</Label>
               <Input
+                placeholder="Enter main business ID"
                 value={profile.main_business_id}
                 onChange={(event) => onChange('main_business_id', event.target.value)}
                 required
@@ -50,6 +51,7 @@ export default function UserAddressCard({ profile, onChange, onSave, isSaving }:
             <div>
               <Label>Branch ID</Label>
               <Input
+                placeholder="Enter branch ID"
                 value={profile.branch_id}
                 onChange={(event) => onChange('branch_id', event.target.value)}
                 required

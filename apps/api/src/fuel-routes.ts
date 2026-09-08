@@ -219,6 +219,8 @@ export const registerFuelRoutes = (
   app.post('/api/v1/fuel/stations', async (request, reply) => {
     const user = await requireUser(request, reply, authenticate);
     if (!user) return;
+    if (user.role !== 'owner')
+      return reply.code(403).send({ message: 'Only the owner can change master data.' });
     const input = stationInput.parse(request.body);
     const station = await prisma.station.create({
       data: {
@@ -236,9 +238,20 @@ export const registerFuelRoutes = (
   app.get('/api/v1/fuel/types', async (request, reply) => {
     const user = await requireUser(request, reply, authenticate);
     if (!user) return;
+    const query = z
+      .object({
+        includeInactive: z
+          .enum(['true', 'false'])
+          .optional()
+          .transform((value) => value === 'true'),
+      })
+      .parse(request.query);
     return reply.send(
       await prisma.fuelType.findMany({
-        where: { businessId: user.main_business_id, active: true },
+        where: {
+          businessId: user.main_business_id,
+          ...(query.includeInactive ? {} : { active: true }),
+        },
         orderBy: { name: 'asc' },
       })
     );
@@ -247,6 +260,8 @@ export const registerFuelRoutes = (
   app.post('/api/v1/fuel/types', async (request, reply) => {
     const user = await requireUser(request, reply, authenticate);
     if (!user) return;
+    if (user.role !== 'owner')
+      return reply.code(403).send({ message: 'Only the owner can change master data.' });
     const input = fuelTypeInput.parse(request.body);
     return reply
       .code(201)
@@ -606,7 +621,7 @@ export const registerFuelRoutes = (
       }),
       pumps: await prisma.pump.findMany({
         where: { stationId: station.id },
-        include: { nozzles: { include: { fuelType: true } } },
+        include: { nozzles: { include: { fuelType: true, tank: true } } },
         orderBy: { number: 'asc' },
       }),
     });

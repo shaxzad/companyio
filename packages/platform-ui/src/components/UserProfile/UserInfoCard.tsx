@@ -49,6 +49,7 @@ export default function UserInfoCard({ profile, onChange, onSave, isSaving }: Pr
             <div>
               <Label>First Name</Label>
               <Input
+                placeholder="Enter first name"
                 value={profile.firstName}
                 onChange={(event) => onChange('firstName', event.target.value)}
                 required
@@ -57,6 +58,7 @@ export default function UserInfoCard({ profile, onChange, onSave, isSaving }: Pr
             <div>
               <Label>Last Name</Label>
               <Input
+                placeholder="Enter last name"
                 value={profile.lastName}
                 onChange={(event) => onChange('lastName', event.target.value)}
                 required
@@ -66,6 +68,7 @@ export default function UserInfoCard({ profile, onChange, onSave, isSaving }: Pr
               <Label>Email Address</Label>
               <Input
                 type="email"
+                placeholder="Enter email address"
                 value={profile.email}
                 onChange={(event) => onChange('email', event.target.value)}
                 required
@@ -75,6 +78,7 @@ export default function UserInfoCard({ profile, onChange, onSave, isSaving }: Pr
               <Label>Phone</Label>
               <Input
                 type="tel"
+                placeholder="Enter phone number"
                 value={profile.phone}
                 onChange={(event) => onChange('phone', event.target.value)}
               />
@@ -82,7 +86,8 @@ export default function UserInfoCard({ profile, onChange, onSave, isSaving }: Pr
             <div className="lg:col-span-2">
               <Label>Bio</Label>
               <textarea
-                className="mt-2 min-h-28 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                className="mt-2 min-h-28 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                placeholder="Enter a short bio"
                 value={profile.bio}
                 onChange={(event) => onChange('bio', event.target.value)}
                 maxLength={500}

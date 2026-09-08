@@ -14,9 +14,10 @@ model Business {
   createdAt     DateTime       @default(now())
   branches      Branch[]
   users         User[]         @relation("UserBusiness")
-  stations      Station[]
-  fuelTypes     FuelType[]
-  organizations Organization[]
+  stations           Station[]
+  fuelTypes          FuelType[]
+  organizations      Organization[]
+  cashDenominations  CashDenomination[]
 }
 
 model Branch {
@@ -105,6 +106,7 @@ model Station {
   code       String
   address    String?
   city       String?
+  logoUrl    String?
   timezone   String         @default("Asia/Karachi")
   active     Boolean        @default(true)
   createdAt  DateTime       @default(now())
@@ -141,6 +143,7 @@ model FuelType {
   saleLines     SaleLine[]
   receiptLines  ReceiptLine[]
   movements     InventoryMovement[]
+  sellingRates  SellingRate[]
 
   @@unique([businessId, code])
   @@index([businessId])
@@ -159,6 +162,7 @@ model Tank {
   fuelType     FuelType            @relation(fields: [fuelTypeId], references: [id])
   movements    InventoryMovement[]
   receiptLines ReceiptLine[]
+  nozzles      Nozzle[]
 
   @@index([stationId])
   @@index([fuelTypeId])
@@ -180,15 +184,42 @@ model Nozzle {
   id           String     @id
   pumpId       String
   fuelTypeId   String
+  tankId       String?
   number       String
   openingMeter Decimal    @default(0) @db.Decimal(14, 3)
   currentMeter Decimal    @default(0) @db.Decimal(14, 3)
   active       Boolean    @default(true)
   pump         Pump       @relation(fields: [pumpId], references: [id], onDelete: Cascade)
   fuelType     FuelType   @relation(fields: [fuelTypeId], references: [id])
+  tank         Tank?      @relation(fields: [tankId], references: [id])
   saleLines    SaleLine[]
 
   @@unique([pumpId, number])
+  @@index([tankId])
+}
+
+model CashDenomination {
+  id         String   @id
+  businessId String
+  value      Int
+  label      String?
+  sortOrder  Int      @default(0)
+  active     Boolean  @default(true)
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, value])
+  @@index([businessId])
+}
+
+model SellingRate {
+  id            String   @id
+  fuelTypeId    String
+  sellingPrice  Decimal  @db.Decimal(14, 2)
+  effectiveFrom DateTime
+  createdAt     DateTime @default(now())
+  fuelType      FuelType @relation(fields: [fuelTypeId], references: [id], onDelete: Cascade)
+
+  @@index([fuelTypeId, effectiveFrom])
 }
 
 model Organization {

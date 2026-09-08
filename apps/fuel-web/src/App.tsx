@@ -2,8 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { PropsWithChildren } from 'react';
 import { useAuth } from '@companyio/auth-react';
 
-import { AppLayout, ScrollToTop } from '@companyio/platform-ui';
-import { sidebarConfig } from './config/sidebar';
+import { ScrollToTop } from '@companyio/platform-ui';
 
 import SignIn from './pages/AuthPages/SignIn';
 import SignUp from './pages/AuthPages/SignUp';
@@ -12,6 +11,14 @@ import UserProfiles from './pages/UserProfiles';
 import Home from './pages/Dashboard/Home';
 import FuelModulePage from './pages/FuelModulePage';
 import FuelRecordPage from './pages/FuelRecordPage';
+import { RoleGate } from './features/auth/RoleGate';
+import UsersPage from './features/users/UsersPage';
+import UserFormPage from './features/users/UserFormPage';
+import PumpProfilePage from './features/settings/PumpProfilePage';
+import ProductsPage from './features/settings/ProductsPage';
+import TanksMetersPage from './features/settings/TanksMetersPage';
+import DenominationsPage from './features/settings/DenominationsPage';
+import RatesPage from './features/settings/RatesPage';
 
 function RequireAuth({ children }: PropsWithChildren) {
   const { user, isLoading } = useAuth();
@@ -29,13 +36,16 @@ export default function App() {
         <Route
           element={
             <RequireAuth>
-              <AppLayout config={sidebarConfig} />
+              <RoleGate />
             </RequireAuth>
           }
         >
           <Route index path="/" element={<Home />} />
 
           <Route path="/profile" element={<UserProfiles />} />
+          <Route path="/users" element={<UsersPage />} />
+          <Route path="/users/new" element={<UserFormPage />} />
+          <Route path="/users/:userId" element={<UserFormPage />} />
           <Route
             path="/sales"
             element={
@@ -141,15 +151,13 @@ export default function App() {
             }
           />
           <Route path="/receiving" element={<Navigate to="/fuel-purchases" replace />} />
-          <Route
-            path="/assets"
-            element={
-              <FuelModulePage
-                title="Pumps & tanks"
-                description="Configure stations, pumps, nozzles, tanks, capacities, and fuel assignments."
-              />
-            }
-          />
+          <Route path="/assets" element={<Navigate to="/settings/tanks" replace />} />
+          <Route path="/settings" element={<Navigate to="/settings/pump" replace />} />
+          <Route path="/settings/pump" element={<PumpProfilePage />} />
+          <Route path="/settings/products" element={<ProductsPage />} />
+          <Route path="/settings/tanks" element={<TanksMetersPage />} />
+          <Route path="/settings/denominations" element={<DenominationsPage />} />
+          <Route path="/settings/rates" element={<RatesPage />} />
           <Route
             path="/customers"
             element={

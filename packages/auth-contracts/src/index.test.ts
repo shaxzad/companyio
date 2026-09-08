@@ -8,6 +8,7 @@ import {
   UpdateManagedUserSchema,
   canApprove,
   isOwnerRole,
+  parseUser,
 } from './index';
 
 describe('authentication contracts', () => {
@@ -41,7 +42,7 @@ describe('authentication contracts', () => {
     expect(canApprove('staff')).toBe(false);
   });
 
-  it('requires a role and password when the owner creates a user', () => {
+              it('requires a role and password when the owner creates a user', () => {
     expect(
       CreateManagedUserSchema.parse({
         name: 'Cashier',
@@ -53,5 +54,32 @@ describe('authentication contracts', () => {
     expect(
       UpdateManagedUserSchema.parse({ isActive: false, role: 'accountant' })
     ).toEqual({ isActive: false, role: 'accountant' });
+  });
+
+  it('requires a concrete fuel role on parsed users', () => {
+    const user = parseUser({
+      id: 'user-1',
+      email: 'owner@example.com',
+      name: 'Owner',
+      role: 'owner',
+      isActive: true,
+      main_business_id: 'biz-1',
+      branch_id: 'branch-1',
+      createdAt: '2026-09-08T00:00:00.000Z',
+      updatedAt: '2026-09-08T00:00:00.000Z',
+    });
+    expect(user.role).toBe('owner');
+    expect(() =>
+      parseUser({
+        id: 'user-1',
+        email: 'owner@example.com',
+        name: 'Owner',
+        isActive: true,
+        main_business_id: 'biz-1',
+        branch_id: 'branch-1',
+        createdAt: '2026-09-08T00:00:00.000Z',
+        updatedAt: '2026-09-08T00:00:00.000Z',
+      })
+    ).toThrow();
   });
 });

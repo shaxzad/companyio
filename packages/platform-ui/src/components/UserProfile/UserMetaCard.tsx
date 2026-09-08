@@ -72,6 +72,7 @@ export default function UserMetaCard({ profile, onChange, onSave, isSaving }: Pr
                 <Label>{label}</Label>
                 <Input
                   type="url"
+                  placeholder={`Enter ${label} URL`}
                   value={profile[field]}
                   onChange={(event) => onChange(field, event.target.value)}
                 />

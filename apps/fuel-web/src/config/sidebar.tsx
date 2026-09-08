@@ -1,6 +1,8 @@
 import type { SidebarConfig } from '@companyio/platform-ui';
+import type { FuelRole } from '@companyio/auth-contracts';
 
-import { BoxCubeIcon, DollarLineIcon, GridIcon, UserCircleIcon } from '@companyio/platform-ui';
+import { BoxCubeIcon, DollarLineIcon, GridIcon, GroupIcon, PlugInIcon, UserCircleIcon } from '@companyio/platform-ui';
+import { canAccessPath } from '../features/auth/roles';
 
 export const sidebarConfig: SidebarConfig = {
   projectDetails: {
@@ -42,7 +44,17 @@ export const sidebarConfig: SidebarConfig = {
         { name: 'Inventory', path: '/inventory' },
         { name: 'Fuel purchases', path: '/fuel-purchases' },
         { name: 'Expenses', path: '/expenses' },
-        { name: 'Pumps & tanks', path: '/assets' },
+      ],
+    },
+    {
+      icon: <PlugInIcon />,
+      name: 'Settings',
+      subItems: [
+        { name: 'Pump profile', path: '/settings/pump' },
+        { name: 'Products', path: '/settings/products' },
+        { name: 'Tanks & meters', path: '/settings/tanks' },
+        { name: 'Denominations', path: '/settings/denominations' },
+        { name: 'Selling rates', path: '/settings/rates' },
       ],
     },
     {
@@ -54,9 +66,31 @@ export const sidebarConfig: SidebarConfig = {
 
   othersItems: [
     {
+      icon: <GroupIcon />,
+      name: 'Users',
+      path: '/users',
+    },
+    {
       icon: <UserCircleIcon />,
       name: 'User Profile',
       path: '/profile',
     },
   ],
 };
+
+const visibleItems = (items: SidebarConfig['navItems'], role: FuelRole) =>
+  items
+    .map((item) => {
+      if (item.subItems) {
+        const subItems = item.subItems.filter((subItem) => canAccessPath(role, subItem.path));
+        return subItems.length > 0 ? { ...item, subItems } : null;
+      }
+      return item.path && canAccessPath(role, item.path) ? item : null;
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+
+export const sidebarForRole = (role: FuelRole): SidebarConfig => ({
+  ...sidebarConfig,
+  navItems: visibleItems(sidebarConfig.navItems, role),
+  othersItems: visibleItems(sidebarConfig.othersItems, role),
+});
