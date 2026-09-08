@@ -41,6 +41,7 @@ export const sidebarConfig: SidebarConfig = {
       icon: <BoxCubeIcon />,
       name: 'Operations',
       subItems: [
+        { name: 'Daily opening', path: '/opening' },
         { name: 'Inventory', path: '/inventory' },
         { name: 'Fuel purchases', path: '/fuel-purchases' },
         { name: 'Expenses', path: '/expenses' },

@@ -19,6 +19,7 @@ import ProductsPage from './features/settings/ProductsPage';
 import TanksMetersPage from './features/settings/TanksMetersPage';
 import DenominationsPage from './features/settings/DenominationsPage';
 import RatesPage from './features/settings/RatesPage';
+import DailyOpeningPage from './features/opening/DailyOpeningPage';
 
 function RequireAuth({ children }: PropsWithChildren) {
   const { user, isLoading } = useAuth();
@@ -158,6 +159,7 @@ export default function App() {
           <Route path="/settings/tanks" element={<TanksMetersPage />} />
           <Route path="/settings/denominations" element={<DenominationsPage />} />
           <Route path="/settings/rates" element={<RatesPage />} />
+          <Route path="/opening" element={<DailyOpeningPage />} />
           <Route
             path="/customers"
             element={

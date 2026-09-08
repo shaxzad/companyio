@@ -43,6 +43,7 @@ const SCREEN_ACCESS: Record<string, ScreenAccess> = {
   '/assets': { view: MANAGEMENT, edit: MANAGEMENT, approve: APPROVERS },
   '/reports': { view: REPORTS, edit: [], approve: [] },
   '/settings': { view: MANAGEMENT, edit: OWNER, approve: [] },
+  '/opening': { view: OPERATIONS, edit: OPERATIONS, approve: OWNER },
 };
 
 const FALLBACK: ScreenAccess = { view: OWNER, edit: OWNER, approve: OWNER };

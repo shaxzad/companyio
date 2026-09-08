@@ -117,8 +117,9 @@ model Station {
   sales      Sale[]
   receipts   FuelReceipt[]
   expenses   Expense[]
-  payments   Payment[]
-  closings   DailyClosing[]
+  payments     Payment[]
+  closings     DailyClosing[]
+  businessDays BusinessDay[]
 
   @@unique([businessId, code])
   @@index([businessId])
@@ -161,8 +162,9 @@ model Tank {
   station      Station             @relation(fields: [stationId], references: [id], onDelete: Cascade)
   fuelType     FuelType            @relation(fields: [fuelTypeId], references: [id])
   movements    InventoryMovement[]
-  receiptLines ReceiptLine[]
-  nozzles      Nozzle[]
+  receiptLines    ReceiptLine[]
+  nozzles         Nozzle[]
+  businessDayRows BusinessDayTank[]
 
   @@index([stationId])
   @@index([fuelTypeId])
@@ -191,8 +193,9 @@ model Nozzle {
   active       Boolean    @default(true)
   pump         Pump       @relation(fields: [pumpId], references: [id], onDelete: Cascade)
   fuelType     FuelType   @relation(fields: [fuelTypeId], references: [id])
-  tank         Tank?      @relation(fields: [tankId], references: [id])
-  saleLines    SaleLine[]
+  tank            Tank?              @relation(fields: [tankId], references: [id])
+  saleLines       SaleLine[]
+  businessDayRows BusinessDayMeter[]
 
   @@unique([pumpId, number])
   @@index([tankId])
@@ -377,6 +380,55 @@ model Expense {
   station     Station       @relation(fields: [stationId], references: [id])
 
   @@index([stationId, spentAt])
+}
+
+enum BusinessDayStatus {
+  OPEN
+  CLOSED
+}
+
+model BusinessDay {
+  id             String             @id
+  stationId      String
+  businessDate   DateTime           @db.Date
+  status         BusinessDayStatus  @default(OPEN)
+  bbfCash        Decimal            @db.Decimal(14, 2)
+  openedAt       DateTime           @default(now())
+  openedBy       String
+  enteredAt      DateTime           @default(now())
+  overrideReason String?
+  closedAt       DateTime?
+  closedBy       String?
+  station        Station            @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  meters         BusinessDayMeter[]
+  tanks          BusinessDayTank[]
+
+  @@unique([stationId, businessDate])
+  @@index([stationId, status])
+}
+
+model BusinessDayMeter {
+  id             String      @id
+  businessDayId  String
+  nozzleId       String
+  openingReading Decimal     @db.Decimal(14, 3)
+  closingReading Decimal?    @db.Decimal(14, 3)
+  businessDay    BusinessDay @relation(fields: [businessDayId], references: [id], onDelete: Cascade)
+  nozzle         Nozzle      @relation(fields: [nozzleId], references: [id])
+
+  @@unique([businessDayId, nozzleId])
+}
+
+model BusinessDayTank {
+  id            String      @id
+  businessDayId String
+  tankId        String
+  openingStock  Decimal     @db.Decimal(14, 3)
+  closingStock  Decimal?    @db.Decimal(14, 3)
+  businessDay   BusinessDay @relation(fields: [businessDayId], references: [id], onDelete: Cascade)
+  tank          Tank        @relation(fields: [tankId], references: [id])
+
+  @@unique([businessDayId, tankId])
 }
 
 model DailyClosing {

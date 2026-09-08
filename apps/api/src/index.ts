@@ -7,6 +7,7 @@ import { promisify } from 'node:util';
 import { PrismaClient, type User as DatabaseUser } from './generated/prisma/client.ts';
 import { registerFuelRoutes } from './fuel-routes.ts';
 import { registerMasterDataRoutes } from './master-routes.ts';
+import { registerOpeningRoutes } from './opening-routes.ts';
 import { registerUserRoutes } from './user-routes.ts';
 import {
   SignInSchema,
@@ -267,6 +268,7 @@ app.get('/api/v1/organizations', async (request, reply) => {
 registerUserRoutes(app, prisma, getAuthenticatedUser, publicUser, hashPassword);
 registerFuelRoutes(app, prisma, getAuthenticatedUser);
 registerMasterDataRoutes(app, prisma, getAuthenticatedUser);
+registerOpeningRoutes(app, prisma, getAuthenticatedUser);
 
 const start = async () => {
   try {

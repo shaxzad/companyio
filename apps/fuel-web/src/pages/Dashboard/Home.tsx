@@ -199,6 +199,11 @@ export default function Home() {
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
               {
+                label: 'Open the day',
+                description: 'Business date, opening meters, tank stock, and BBF Cash',
+                href: '/opening',
+              },
+              {
                 label: 'Record fuel sale',
                 description: 'Meters, nozzles, litres, and cash/card sale',
                 href: '/sales',
