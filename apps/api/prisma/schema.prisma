@@ -266,6 +266,7 @@ model Vehicle {
 model Sale {
   id             String        @id
   stationId      String
+  businessDayId  String?
   organizationId String?
   vehicleId      String?
   saleNumber     String        @unique
@@ -278,46 +279,69 @@ model Sale {
   createdBy      String
   createdAt      DateTime      @default(now())
   station        Station       @relation(fields: [stationId], references: [id])
+  businessDay    BusinessDay?  @relation(fields: [businessDayId], references: [id])
   organization   Organization? @relation(fields: [organizationId], references: [id])
   vehicle        Vehicle?      @relation(fields: [vehicleId], references: [id])
   lines          SaleLine[]
 
   @@index([stationId, soldAt])
   @@index([organizationId, soldAt])
+  @@index([businessDayId])
 }
 
 model SaleLine {
-  id           String   @id
-  saleId       String
-  fuelTypeId   String
-  nozzleId     String?
-  litres       Decimal  @db.Decimal(14, 3)
-  unitPrice    Decimal  @db.Decimal(14, 2)
-  amount       Decimal  @db.Decimal(14, 2)
-  openingMeter Decimal? @db.Decimal(14, 3)
-  closingMeter Decimal? @db.Decimal(14, 3)
-  sale         Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  fuelType     FuelType @relation(fields: [fuelTypeId], references: [id])
-  nozzle       Nozzle?  @relation(fields: [nozzleId], references: [id])
+  id                 String   @id
+  saleId             String
+  fuelTypeId         String
+  nozzleId           String?
+  litres             Decimal  @db.Decimal(14, 3)
+  unitPrice          Decimal  @db.Decimal(14, 2)
+  amount             Decimal  @db.Decimal(14, 2)
+  openingMeter       Decimal? @db.Decimal(14, 3)
+  closingMeter       Decimal? @db.Decimal(14, 3)
+  rateOverrideReason String?
+  sale               Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  fuelType           FuelType @relation(fields: [fuelTypeId], references: [id])
+  nozzle             Nozzle?  @relation(fields: [nozzleId], references: [id])
+}
+
+enum AccessRateMode {
+  PURCHASE
+  SELLING
 }
 
 model FuelReceipt {
-  id            String        @id
-  stationId     String
-  supplier      String
-  tankerNumber  String?
-  invoiceNumber String?
-  receivedAt    DateTime
-  totalCost     Decimal       @db.Decimal(14, 2)
-  status        RecordStatus  @default(CONFIRMED)
-  notes         String?
-  createdBy     String
-  createdAt     DateTime      @default(now())
-  station       Station       @relation(fields: [stationId], references: [id])
-  lines         ReceiptLine[]
+  id                 String         @id
+  stationId          String
+  businessDayId      String?
+  supplier           String
+  tankerNumber       String?
+  invoiceNumber      String?
+  receivedAt         DateTime
+  expectedLitres     Decimal        @db.Decimal(14, 3)
+  actualLitres       Decimal        @db.Decimal(14, 3)
+  totalDip           Decimal?       @db.Decimal(14, 3)
+  receivedDip        Decimal?       @db.Decimal(14, 3)
+  accessLitres       Decimal        @default(0) @db.Decimal(14, 3)
+  shortageLitres     Decimal        @default(0) @db.Decimal(14, 3)
+  purchaseRate       Decimal        @db.Decimal(14, 2)
+  accessRateMode     AccessRateMode @default(PURCHASE)
+  accessRate         Decimal        @db.Decimal(14, 2)
+  fuelCost           Decimal        @db.Decimal(14, 2)
+  tankerTip          Decimal        @default(0) @db.Decimal(14, 2)
+  otherReceivingCost Decimal        @default(0) @db.Decimal(14, 2)
+  totalCost          Decimal        @db.Decimal(14, 2)
+  status             RecordStatus   @default(CONFIRMED)
+  notes              String?
+  createdBy          String
+  createdAt          DateTime       @default(now())
+  station            Station        @relation(fields: [stationId], references: [id])
+  businessDay        BusinessDay?   @relation(fields: [businessDayId], references: [id])
+  lines              ReceiptLine[]
 
   @@unique([stationId, invoiceNumber])
   @@index([stationId, receivedAt])
+  @@index([businessDayId])
 }
 
 model ReceiptLine {
@@ -331,6 +355,8 @@ model ReceiptLine {
   receipt       FuelReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
   fuelType      FuelType    @relation(fields: [fuelTypeId], references: [id])
   tank          Tank        @relation(fields: [tankId], references: [id])
+
+  @@index([tankId, receiptId])
 }
 
 model InventoryMovement {
@@ -402,6 +428,8 @@ model BusinessDay {
   station        Station            @relation(fields: [stationId], references: [id], onDelete: Cascade)
   meters         BusinessDayMeter[]
   tanks          BusinessDayTank[]
+  sales          Sale[]
+  receipts       FuelReceipt[]
 
   @@unique([stationId, businessDate])
   @@index([stationId, status])

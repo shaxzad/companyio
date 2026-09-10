@@ -200,14 +200,13 @@ export default function FuelRecordPage({
     setStatus('');
     setError('');
     try {
-      const payload: Record<string, unknown> = {};
+      const payload: Record<string, unknown> = { ...defaults };
       visibleFields.forEach((field) => {
         const value = values[field.name];
         if (value !== undefined && value !== '')
           payload[field.name] = field.type === 'number' ? Number(value) : value;
       });
-      if (title === 'Daily sales' && !payload.unitPrice && selectedFuel)
-        payload.unitPrice = Number(selectedFuel.sellingPrice);
+      if (!payload.unitPrice && selectedFuel) payload.unitPrice = Number(selectedFuel.sellingPrice);
       const resolvedEndpoint = endpoint.replace(
         '${organizationId}',
         String(payload.organizationId ?? '')

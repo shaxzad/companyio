@@ -5,9 +5,12 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { PrismaClient, type User as DatabaseUser } from './generated/prisma/client.ts';
+import { z } from 'zod';
 import { registerFuelRoutes } from './fuel-routes.ts';
 import { registerMasterDataRoutes } from './master-routes.ts';
+import { registerMeterSalesRoutes } from './meter-sales-routes.ts';
 import { registerOpeningRoutes } from './opening-routes.ts';
+import { registerReceivingRoutes } from './receiving-routes.ts';
 import { registerUserRoutes } from './user-routes.ts';
 import {
   SignInSchema,
@@ -27,6 +30,17 @@ const scrypt = promisify(scryptCallback);
 
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: true });
+
+app.setErrorHandler((error, _request, reply) => {
+  if (error instanceof z.ZodError) {
+    const first = error.issues[0];
+    const field = first?.path?.join('.') || 'input';
+    return reply.code(400).send({
+      message: first?.message === 'Required' ? `${field} is required.` : (first?.message ?? 'Invalid input.'),
+    });
+  }
+  reply.send(error);
+});
 
 const hashPassword = async (password: string, salt = randomBytes(16).toString('hex')) => {
   const derivedKey = (await scrypt(password, salt, 64)) as Buffer;
@@ -269,6 +283,8 @@ registerUserRoutes(app, prisma, getAuthenticatedUser, publicUser, hashPassword);
 registerFuelRoutes(app, prisma, getAuthenticatedUser);
 registerMasterDataRoutes(app, prisma, getAuthenticatedUser);
 registerOpeningRoutes(app, prisma, getAuthenticatedUser);
+registerMeterSalesRoutes(app, prisma, getAuthenticatedUser);
+registerReceivingRoutes(app, prisma, getAuthenticatedUser);
 
 const start = async () => {
   try {

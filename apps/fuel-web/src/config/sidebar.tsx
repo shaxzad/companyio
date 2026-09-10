@@ -28,7 +28,7 @@ export const sidebarConfig: SidebarConfig = {
       icon: <DollarLineIcon />,
       name: 'Sales & Credit',
       subItems: [
-        { name: 'Daily sales', path: '/sales' },
+        { name: 'Fuel sales', path: '/sales' },
         { name: 'Fleet sales', path: '/fleet-sales' },
         { name: 'Organizations', path: '/organizations' },
         { name: 'Customers', path: '/customers' },
@@ -43,7 +43,7 @@ export const sidebarConfig: SidebarConfig = {
       subItems: [
         { name: 'Daily opening', path: '/opening' },
         { name: 'Inventory', path: '/inventory' },
-        { name: 'Fuel purchases', path: '/fuel-purchases' },
+        { name: 'Tanker receiving', path: '/fuel-purchases' },
         { name: 'Expenses', path: '/expenses' },
       ],
     },

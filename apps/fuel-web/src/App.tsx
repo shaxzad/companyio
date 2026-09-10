@@ -20,6 +20,8 @@ import TanksMetersPage from './features/settings/TanksMetersPage';
 import DenominationsPage from './features/settings/DenominationsPage';
 import RatesPage from './features/settings/RatesPage';
 import DailyOpeningPage from './features/opening/DailyOpeningPage';
+import MeterSalesPage from './features/sales/MeterSalesPage';
+import ReceivingPage from './features/receiving/ReceivingPage';
 
 function RequireAuth({ children }: PropsWithChildren) {
   const { user, isLoading } = useAuth();
@@ -47,37 +49,7 @@ export default function App() {
           <Route path="/users" element={<UsersPage />} />
           <Route path="/users/new" element={<UserFormPage />} />
           <Route path="/users/:userId" element={<UserFormPage />} />
-          <Route
-            path="/sales"
-            element={
-              <FuelRecordPage
-                title="Daily sales"
-                description="Capture opening and closing meter readings and reconcile litres sold by nozzle and shift."
-                endpoint="/fuel/sales"
-                fields={[
-                  { name: 'stationId', label: 'Station', required: true },
-                  { name: 'fuelTypeId', label: 'Fuel type', required: true },
-                  { name: 'tankId', label: 'Tank', required: true },
-                  {
-                    name: 'saleType',
-                    label: 'Sale type',
-                    required: true,
-                    options: [
-                      { value: 'CASH', label: 'Cash' },
-                      { value: 'CARD', label: 'Card / bank' },
-                      { value: 'CREDIT', label: 'Credit' },
-                    ],
-                  },
-                  { name: 'litres', label: 'Litres', type: 'number', required: true },
-                  { name: 'unitPrice', label: 'Selling price per litre', type: 'number' },
-                  { name: 'openingMeter', label: 'Opening meter', type: 'number' },
-                  { name: 'closingMeter', label: 'Closing meter', type: 'number' },
-                  { name: 'organizationId', label: 'Organization' },
-                  { name: 'vehicleId', label: 'Vehicle' },
-                ]}
-              />
-            }
-          />
+          <Route path="/sales" element={<MeterSalesPage />} />
           <Route
             path="/fleet-sales"
             element={
@@ -126,31 +98,7 @@ export default function App() {
               />
             }
           />
-          <Route
-            path="/fuel-purchases"
-            element={
-              <FuelRecordPage
-                title="Fuel purchases"
-                description="Record tanker deliveries, landed cost, supplier balances, and stock increases."
-                endpoint="/fuel/receipts"
-                fields={[
-                  { name: 'stationId', label: 'Station', required: true },
-                  { name: 'supplier', label: 'Supplier', required: true },
-                  { name: 'fuelTypeId', label: 'Fuel type', required: true },
-                  { name: 'tankId', label: 'Tank', required: true },
-                  { name: 'litres', label: 'Quantity in litres', type: 'number', required: true },
-                  {
-                    name: 'purchasePrice',
-                    label: 'Purchase price per litre',
-                    type: 'number',
-                    required: true,
-                  },
-                  { name: 'tankerNumber', label: 'Tanker number' },
-                  { name: 'invoiceNumber', label: 'Invoice number' },
-                ]}
-              />
-            }
-          />
+          <Route path="/fuel-purchases" element={<ReceivingPage />} />
           <Route path="/receiving" element={<Navigate to="/fuel-purchases" replace />} />
           <Route path="/assets" element={<Navigate to="/settings/tanks" replace />} />
           <Route path="/settings" element={<Navigate to="/settings/pump" replace />} />

@@ -205,7 +205,7 @@ export default function Home() {
               },
               {
                 label: 'Record fuel sale',
-                description: 'Meters, nozzles, litres, and cash/card sale',
+                description: 'Closing meters, litres, and product totals',
                 href: '/sales',
               },
               {
@@ -215,7 +215,7 @@ export default function Home() {
               },
               {
                 label: 'Receive fuel',
-                description: 'Add a tanker delivery to inventory',
+                description: 'Tanker delivery, dips, Access, and tank stock',
                 href: '/receiving',
               },
               {
