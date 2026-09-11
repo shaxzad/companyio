@@ -27,3 +27,5 @@ export type {
   FuelReceipt,
   ListReceiptsParams,
 } from './receiving';
+export type { ApiErrorBody } from './apiError';
+export { ApiError, isApiError, parseApiErrorBody } from './apiError';

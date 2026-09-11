@@ -36,9 +36,11 @@ apps/fuel-web/src/
 8. **Types** — put shared entity/API types in `types/`. Do not export types from service files; import types into services from `types/`.
 9. **Utils** — put formatting / date / error helpers in `utils/`. Do not redefine `formatMoney`, `roundTo`, `toErrorMessage`, `todayYmd` in components.
 10. **Financial inputs** — use `toFinancialInput` / `parseFinancialInput` / `requireFinancialInput` from `utils/financial`. Never prefill inputs with bare `0`. Empty means missing; explicit `0` means the operator entered zero. Do not coerce empty with `Number(x || 0)` on submit.
-11. **TypeScript** — no unnecessary `any`. Prefer explicit return types on public service functions.
-12. **Auth user** — use `@companyio/auth-react` (`useAuth`). Do not duplicate current user into Zustand unless there is a clear UI-only need.
-13. **Color palette** — Fuel uses white, black/gray, primary `#fb6514` (`brand-*` / remapped in `styles/theme.css`), plus `error-*` / `success-*` / `warning-*` for status. Do **not** use blue/sky accents in fuel-web features.
+11. **API errors** — backend returns `{ message, fields?, code? }`. `apiRequest` throws `ApiError`. Use `useFormSubmission` for forms: field errors under inputs via `FormField` / `fieldError()`, global errors via `toast` (`ui/toast`). **Never reset form fields until the mutation succeeds** (`onSuccess` only). Do not invent per-screen error parsers.
+12. **Confirmations** — use `ConfirmDialog` + `useConfirmDialog`. Never use `window.confirm` / `alert` / `prompt`.
+13. **TypeScript** — no unnecessary `any`. Prefer explicit return types on public service functions.
+14. **Auth user** — use `@companyio/auth-react` (`useAuth`). Do not duplicate current user into Zustand unless there is a clear UI-only need.
+15. **Color palette** — Fuel uses white, black/gray, primary `#fb6514` (`brand-*` / remapped in `styles/theme.css`), plus `error-*` / `success-*` / `warning-*` for status. Do **not** use blue/sky accents in fuel-web features.
 
 ## Adding a new feature checklist
 
@@ -47,8 +49,9 @@ apps/fuel-web/src/
 3. Add query key(s) in `hooks/queryKeys.ts`
 4. Add `useQuery` / `useMutation` hook(s) in `hooks/`
 5. Build UI in `features/<feature>/` that only consumes hooks
-6. Register route in `config/routes.tsx` if needed
-7. Use `store/<feature>/` only for non-server UI state
+6. Wire forms with `useFormSubmission` + `FormField` (reset only in `onSuccess`)
+7. Register route in `config/routes.tsx` if needed
+8. Use `store/<feature>/` only for non-server UI state
 
 ## Anti-patterns (reject these)
 
@@ -56,3 +59,6 @@ apps/fuel-web/src/
 - Copy-pasting the same `fetch` wrapper or money formatter into a new file
 - Storing `stations`, `fuelTypes`, or dashboard payloads in Zustand
 - Importing from a deleted `src/api/` folder
+- Resetting form state in `try` before `await mutation` / resetting on catch
+- Showing API failures only in a collapsed panel with no toast / field hint
+- Using `window.confirm`, `alert`, or `prompt` for user feedback

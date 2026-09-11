@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { PageMeta } from '@companyio/platform-ui';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
@@ -9,8 +9,8 @@ import {
 } from '../../../hooks';
 import type { CashDenomination } from '../../../types';
 import { toErrorMessage } from '../../../utils';
+import { toast } from '../../../ui/toast';
 import { canEditPath, roleOf } from '../../auth/roles';
-import { Notice } from '../../../ui/page';
 import { SettingsChrome } from '../SettingsChrome';
 import { CashCountingBoard } from './CashCountingBoard';
 import { ManageDenominations } from './ManageDenominations';
@@ -21,9 +21,13 @@ export default function DenominationsPage() {
   const role = roleOf(user);
   const canEdit = Boolean(role && canEditPath(role, location.pathname));
   const { data: rows = [], error: rowsError, isLoading } = useDenominations();
-  const { createDenomination, loadDefaults, updateDenomination } = useDenominationMutations();
+  const { createDenomination, loadDefaults, updateDenomination, deleteDenomination } =
+    useDenominationMutations();
   const { lines, totalCash, setCount, bumpCount, clearCounts } = useCashCountDraft(rows);
-  const [pageError, setPageError] = useState('');
+
+  useEffect(() => {
+    if (rowsError) toast.error(toErrorMessage(rowsError));
+  }, [rowsError]);
 
   const sortedRows = [...rows].sort((a, b) => Number(b.value) - Number(a.value));
 
@@ -38,10 +42,6 @@ export default function DenominationsPage() {
         description="Count each note denomination. Amount and total update as you type — no manual math."
         canEdit={canEdit}
       >
-        {(pageError || rowsError) && (
-          <Notice tone="error">{pageError || toErrorMessage(rowsError)}</Notice>
-        )}
-
         {isLoading ? (
           <p className="text-sm text-gray-500">Loading denominations…</p>
         ) : (
@@ -65,16 +65,17 @@ export default function DenominationsPage() {
           defaultOpen={rows.length === 0}
           createPending={createDenomination.isPending}
           loadDefaultsPending={loadDefaults.isPending}
+          deletePending={deleteDenomination.isPending}
           onCreate={async (input) => {
-            setPageError('');
             await createDenomination.mutateAsync(input);
           }}
           onToggleActive={async (row: CashDenomination) => {
-            setPageError('');
             await updateDenomination.mutateAsync({ id: row.id, data: { active: !row.active } });
           }}
+          onDelete={async (row: CashDenomination) => {
+            await deleteDenomination.mutateAsync(row.id);
+          }}
           onLoadDefaults={async () => {
-            setPageError('');
             await loadDefaults.mutateAsync();
           }}
         />

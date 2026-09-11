@@ -21,6 +21,11 @@ export const updateDenomination = (id: string, data: Record<string, unknown>) =>
     body: JSON.stringify(data),
   });
 
+export const deleteDenomination = (id: string) =>
+  apiRequest<void>(`/fuel/denominations/${id}`, {
+    method: 'DELETE',
+  });
+
 export const listRates = (fuelTypeId?: string) =>
   apiRequest<SellingRate[]>(`/fuel/rates${fuelTypeId ? `?fuelTypeId=${fuelTypeId}` : ''}`);
 

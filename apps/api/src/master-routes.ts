@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { PrismaClient } from './generated/prisma/client.ts';
 import type { User as AuthUser } from '@companyio/auth-contracts';
+import { sendApiError } from './http-errors.ts';
 
 type Authenticator = (authorization?: string) => Promise<AuthUser | null>;
 
@@ -253,8 +254,14 @@ export const registerMasterDataRoutes = (
     if (!user) return;
     const input = z
       .object({
-        value: z.number().int().positive(),
-        label: z.string().max(40).optional(),
+        value: z
+          .number({
+            required_error: 'Value is required.',
+            invalid_type_error: 'Value must be a number.',
+          })
+          .int('Value must be a whole number.')
+          .positive('Value must be greater than zero.'),
+        label: z.string().max(40, 'Label must be at most 40 characters.').optional(),
         sortOrder: z.number().int().nonnegative().optional(),
       })
       .parse(request.body);
@@ -271,8 +278,12 @@ export const registerMasterDataRoutes = (
         })
       );
     } catch (error) {
-      if ((error as { code?: string }).code === 'P2002')
-        return reply.code(409).send({ message: 'That denomination already exists.' });
+      if ((error as { code?: string }).code === 'P2002') {
+        return sendApiError(reply, 409, 'That denomination already exists.', {
+          code: 'CONFLICT',
+          fields: { value: 'That denomination already exists.' },
+        });
+      }
       throw error;
     }
   });
@@ -312,8 +323,30 @@ export const registerMasterDataRoutes = (
     const row = await prisma.cashDenomination.findFirst({
       where: { id: params.id, businessId: user.main_business_id },
     });
-    if (!row) return reply.code(404).send({ message: 'Denomination not found.' });
-    return reply.send(await prisma.cashDenomination.update({ where: { id: row.id }, data: input }));
+    if (!row) return sendApiError(reply, 404, 'Denomination not found.', { code: 'NOT_FOUND' });
+    try {
+      return reply.send(await prisma.cashDenomination.update({ where: { id: row.id }, data: input }));
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') {
+        return sendApiError(reply, 409, 'That denomination already exists.', {
+          code: 'CONFLICT',
+          fields: { value: 'That denomination already exists.' },
+        });
+      }
+      throw error;
+    }
+  });
+
+  app.delete('/api/v1/fuel/denominations/:id', async (request, reply) => {
+    const user = await requireOwner(request, reply, authenticate);
+    if (!user) return;
+    const params = z.object({ id }).parse(request.params);
+    const row = await prisma.cashDenomination.findFirst({
+      where: { id: params.id, businessId: user.main_business_id },
+    });
+    if (!row) return sendApiError(reply, 404, 'Denomination not found.', { code: 'NOT_FOUND' });
+    await prisma.cashDenomination.delete({ where: { id: row.id } });
+    return reply.code(204).send();
   });
 
   app.get('/api/v1/fuel/rates', async (request, reply) => {

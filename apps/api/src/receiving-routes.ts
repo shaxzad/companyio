@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { PrismaClient } from './generated/prisma/client.ts';
 import type { User as AuthUser } from '@companyio/auth-contracts';
+import { sendApiError } from './http-errors.ts';
 
 type Authenticator = (authorization?: string) => Promise<AuthUser | null>;
 
@@ -278,8 +279,12 @@ export const registerReceivingRoutes = (
 
       return reply.code(201).send(serializeReceipt(created));
     } catch (error) {
-      if ((error as { code?: string }).code === 'P2002')
-        return reply.code(409).send({ message: 'That invoice number already exists for this station.' });
+      if ((error as { code?: string }).code === 'P2002') {
+        return sendApiError(reply, 409, 'That invoice number already exists for this station.', {
+          code: 'CONFLICT',
+          fields: { invoiceNumber: 'That invoice number already exists for this station.' },
+        });
+      }
       throw error;
     }
   });

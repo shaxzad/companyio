@@ -7,6 +7,7 @@ import {
   createRate,
   createStation,
   createTank,
+  deleteDenomination,
   listDenominations,
   listRates,
   loadDefaultDenominations,
@@ -105,6 +106,10 @@ export function useDenominationMutations() {
     updateDenomination: useMutation({
       mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
         updateDenomination(id, data),
+      onSuccess: invalidate,
+    }),
+    deleteDenomination: useMutation({
+      mutationFn: (id: string) => deleteDenomination(id),
       onSuccess: invalidate,
     }),
   };

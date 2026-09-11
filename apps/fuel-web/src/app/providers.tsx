@@ -4,6 +4,7 @@ import { ThemeProvider, AppWrapper } from '@companyio/platform-ui';
 import { AuthClient, createBrowserStorage } from '@companyio/auth-client';
 import { AuthProvider } from '@companyio/auth-react';
 import { queryClient } from './queryClient';
+import { AppToaster } from '../ui/toast';
 
 export const authClient = new AuthClient({
   baseUrl: import.meta.env.VITE_API_URL ?? 'http://localhost:3000',
@@ -17,7 +18,10 @@ export function AppProviders({ children }: PropsWithChildren) {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <AppWrapper>
-            <AuthProvider client={authClient}>{children}</AuthProvider>
+            <AuthProvider client={authClient}>
+              {children}
+              <AppToaster />
+            </AuthProvider>
           </AppWrapper>
         </ThemeProvider>
       </QueryClientProvider>

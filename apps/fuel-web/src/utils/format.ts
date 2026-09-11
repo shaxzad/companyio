@@ -15,9 +15,6 @@ export const formatMoney = (
 
 export const formatLitres = (value: number) => `${value.toLocaleString()} L`;
 
-export const toErrorMessage = (caught: unknown, fallback = 'Something went wrong.') =>
-  caught instanceof Error ? caught.message : typeof caught === 'string' ? caught : fallback;
-
 /** Today as `YYYY-MM-DD` in Asia/Karachi (station business calendar). */
 export const todayYmd = () =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(new Date());

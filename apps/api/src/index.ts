@@ -12,6 +12,7 @@ import { registerMeterSalesRoutes } from './meter-sales-routes.ts';
 import { registerOpeningRoutes } from './opening-routes.ts';
 import { registerReceivingRoutes } from './receiving-routes.ts';
 import { registerUserRoutes } from './user-routes.ts';
+import { apiError, fromZodError } from './http-errors.ts';
 import {
   SignInSchema,
   SignUpSchema,
@@ -31,15 +32,32 @@ const scrypt = promisify(scryptCallback);
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: true });
 
+const requestLogError = (error: unknown) => {
+  app.log.error(error);
+};
+
 app.setErrorHandler((error, _request, reply) => {
   if (error instanceof z.ZodError) {
-    const first = error.issues[0];
-    const field = first?.path?.join('.') || 'input';
-    return reply.code(400).send({
-      message: first?.message === 'Required' ? `${field} is required.` : (first?.message ?? 'Invalid input.'),
-    });
+    return reply.code(400).send(fromZodError(error));
   }
-  reply.send(error);
+
+  const statusCode =
+    typeof (error as { statusCode?: unknown }).statusCode === 'number'
+      ? (error as { statusCode: number }).statusCode
+      : 500;
+
+  if (statusCode >= 500) {
+    requestLogError(error);
+    return reply.code(500).send(apiError('Something went wrong.', { code: 'INTERNAL_ERROR' }));
+  }
+
+  const message =
+    typeof (error as { message?: unknown }).message === 'string' &&
+    (error as { message: string }).message.trim()
+      ? (error as { message: string }).message
+      : 'The request could not be completed.';
+
+  return reply.code(statusCode).send(apiError(message));
 });
 
 const hashPassword = async (password: string, salt = randomBytes(16).toString('hex')) => {

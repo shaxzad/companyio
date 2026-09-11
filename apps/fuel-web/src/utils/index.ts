@@ -5,7 +5,6 @@ export {
   formatLitres,
   formatMoney,
   roundTo,
-  toErrorMessage,
   todayYmd,
 } from './format';
 export {
@@ -21,3 +20,13 @@ export {
   totalCashFromLines,
   type CashCountLine,
 } from './cashCount';
+export {
+  ApiError,
+  getFieldErrors,
+  isApiError,
+  parseApiErrorBody,
+  presentError,
+  toErrorMessage,
+  type ApiErrorBody,
+  type PresentedError,
+} from './errors';
