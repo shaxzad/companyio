@@ -88,7 +88,7 @@ export default function PumpProfilePage() {
             )}
             <div>
               <Label htmlFor="pump-name">
-                Pump / station name <span className="text-orange-500">*</span>
+                Pump / station name <span className="text-brand-500">*</span>
               </Label>
               <Input
                 id="pump-name"
@@ -101,7 +101,7 @@ export default function PumpProfilePage() {
             </div>
             <div>
               <Label htmlFor="pump-code">
-                Station code <span className="text-orange-500">*</span>
+                Station code <span className="text-brand-500">*</span>
               </Label>
               <Input
                 id="pump-code"

@@ -1,4 +1,6 @@
 export {
+  denominationCashTotal,
+  denominationRowAmount,
   emptyRecord,
   formatLitres,
   formatMoney,
@@ -12,3 +14,10 @@ export {
   toFinancialInput,
   type FinancialInputOptions,
 } from './financial';
+export {
+  buildCashCountLines,
+  denominationDisplayLabel,
+  parseNoteCount,
+  totalCashFromLines,
+  type CashCountLine,
+} from './cashCount';

@@ -38,6 +38,7 @@ apps/fuel-web/src/
 10. **Financial inputs** — use `toFinancialInput` / `parseFinancialInput` / `requireFinancialInput` from `utils/financial`. Never prefill inputs with bare `0`. Empty means missing; explicit `0` means the operator entered zero. Do not coerce empty with `Number(x || 0)` on submit.
 11. **TypeScript** — no unnecessary `any`. Prefer explicit return types on public service functions.
 12. **Auth user** — use `@companyio/auth-react` (`useAuth`). Do not duplicate current user into Zustand unless there is a clear UI-only need.
+13. **Color palette** — Fuel uses white, black/gray, primary `#fb6514` (`brand-*` / remapped in `styles/theme.css`), plus `error-*` / `success-*` / `warning-*` for status. Do **not** use blue/sky accents in fuel-web features.
 
 ## Adding a new feature checklist
 

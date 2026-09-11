@@ -6,7 +6,7 @@ const TABS = [
   { to: '/settings/pump', label: 'Pump profile' },
   { to: '/settings/products', label: 'Products' },
   { to: '/settings/tanks', label: 'Tanks & meters' },
-  { to: '/settings/denominations', label: 'Denominations' },
+  { to: '/settings/denominations', label: 'Cash notes' },
   { to: '/settings/rates', label: 'Selling rates' },
 ];
 
@@ -31,8 +31,8 @@ export function SettingsChrome({
             className={({ isActive }) =>
               `rounded-lg px-3 py-2 text-sm font-semibold ${
                 isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'border border-gray-200 bg-white text-gray-700 hover:border-blue-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200'
+                  ? 'bg-brand-500 text-white'
+                  : 'border border-gray-200 bg-white text-gray-700 hover:border-brand-300 hover:bg-brand-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200'
               }`
             }
           >

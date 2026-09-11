@@ -221,19 +221,19 @@ export default function FuelRecordPage({
             label="Station"
             value={stations[0]?.name ?? '--'}
             detail="Active pump"
-            tone="text-emerald-600"
+            tone="text-success-600"
           />
           <KpiCard
             label="Fuel types"
             value={String(fuelTypes.length || '--')}
             detail="Available products"
-            tone="text-sky-600"
+            tone="text-brand-600"
           />
           <KpiCard
             label="Organizations"
             value={String(organizations.length || '--')}
             detail="Credit accounts on file"
-            tone="text-orange-600"
+            tone="text-brand-600"
           />
         </section>
 
@@ -262,7 +262,7 @@ export default function FuelRecordPage({
                 <div key={field.name}>
                   <Label htmlFor={field.name}>
                     {field.label}
-                    {field.required && <span className="text-orange-500"> *</span>}
+                    {field.required && <span className="text-brand-500"> *</span>}
                   </Label>
                   {field.options || LOOKUP_FIELDS.has(field.name) ? (
                     <Select

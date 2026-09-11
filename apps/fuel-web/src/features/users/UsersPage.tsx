@@ -70,19 +70,19 @@ export default function UsersPage() {
             label="Team members"
             value={isLoading ? '--' : String(users.length)}
             detail="Accounts at this station"
-            tone="text-sky-600"
+            tone="text-brand-600"
           />
           <KpiCard
             label="Active"
             value={isLoading ? '--' : String(activeCount)}
             detail="Can sign in today"
-            tone="text-emerald-600"
+            tone="text-success-600"
           />
           <KpiCard
             label="Deactivated"
             value={isLoading ? '--' : String(users.length - activeCount)}
             detail="Blocked from the till"
-            tone="text-rose-600"
+            tone="text-error-600"
           />
         </section>
 
@@ -115,7 +115,7 @@ export default function UsersPage() {
                       <td className="px-5 py-4 font-medium">{item.name}</td>
                       <td className="px-5 py-4">{item.email}</td>
                       <td className="px-5 py-4">
-                        <span className="rounded-lg bg-orange-100 px-2 py-1 text-[11px] font-semibold text-orange-700">
+                        <span className="rounded-lg bg-brand-100 px-2 py-1 text-[11px] font-semibold text-brand-700">
                           {ROLE_LABELS[item.role]}
                         </span>
                       </td>
@@ -139,7 +139,7 @@ export default function UsersPage() {
                               type="button"
                               className={
                                 item.isActive
-                                  ? 'inline-flex items-center justify-center rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-400 disabled:opacity-50'
+                                  ? 'inline-flex items-center justify-center rounded-lg bg-error-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-error-400 disabled:opacity-50'
                                   : `${secondaryActionClass} !px-3 !py-1.5 text-xs`
                               }
                               disabled={pendingId === item.id}

@@ -175,19 +175,19 @@ export default function DailyOpeningPage() {
             label="Business date"
             value={businessDate || '--'}
             detail="Independent from system time"
-            tone="text-sky-600"
+            tone="text-brand-600"
           />
           <KpiCard
             label="Meters"
             value={String(preview?.meters.length ?? preview?.existing?.meters.length ?? '--')}
             detail={sourceLabel}
-            tone="text-emerald-600"
+            tone="text-success-600"
           />
           <KpiCard
             label="BBF Cash"
             value={bbfCash === '' ? '--' : `PKR ${Number(bbfCash).toLocaleString('en-PK')}`}
             detail="Stored for the closing screen"
-            tone="text-orange-600"
+            tone="text-brand-600"
           />
         </section>
 

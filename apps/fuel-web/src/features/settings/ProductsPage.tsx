@@ -177,7 +177,7 @@ export default function ProductsPage() {
                 editingId ? (
                   <button
                     type="button"
-                    className="text-xs font-semibold text-orange-600"
+                    className="text-xs font-semibold text-brand-600"
                     onClick={() => {
                       setEditingId(null);
                       setForm(emptyForm());
@@ -201,7 +201,7 @@ export default function ProductsPage() {
               )}
               <div>
                 <Label htmlFor="product-name">
-                  Product name <span className="text-orange-500">*</span>
+                  Product name <span className="text-brand-500">*</span>
                 </Label>
                 <Input
                   id="product-name"
@@ -213,7 +213,7 @@ export default function ProductsPage() {
               </div>
               <div>
                 <Label htmlFor="product-code">
-                  Code <span className="text-orange-500">*</span>
+                  Code <span className="text-brand-500">*</span>
                 </Label>
                 <Input
                   id="product-code"
@@ -225,7 +225,7 @@ export default function ProductsPage() {
               </div>
               <div>
                 <Label htmlFor="selling-price">
-                  Selling price per litre <span className="text-orange-500">*</span>
+                  Selling price per litre <span className="text-brand-500">*</span>
                 </Label>
                 <Input
                   id="selling-price"
@@ -238,7 +238,7 @@ export default function ProductsPage() {
               </div>
               <div>
                 <Label htmlFor="purchase-price">
-                  Purchase price per litre <span className="text-orange-500">*</span>
+                  Purchase price per litre <span className="text-brand-500">*</span>
                 </Label>
                 <Input
                   id="purchase-price"

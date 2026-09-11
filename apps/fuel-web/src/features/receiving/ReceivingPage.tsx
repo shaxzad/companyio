@@ -144,25 +144,25 @@ export default function ReceivingPage() {
             label="Access (L)"
             value={form.expectedLitres && form.actualLitres ? String(accessLitres) : '--'}
             detail={shortageLitres > 0 ? `Shortage ${shortageLitres} L` : 'Gain when actual > expected'}
-            tone={shortageLitres > 0 ? 'text-rose-600' : 'text-emerald-600'}
+            tone={shortageLitres > 0 ? 'text-error-600' : 'text-success-600'}
           />
           <KpiCard
             label="Fuel cost"
             value={fuelCost ? money(fuelCost) : '--'}
             detail="Actual litres × purchase rate"
-            tone="text-sky-600"
+            tone="text-brand-600"
           />
           <KpiCard
             label="Access rate"
             value={accessRate ? String(accessRate) : '--'}
             detail={form.accessRateMode === 'SELLING' ? 'Selling rate (configurable)' : 'Purchase rate (default)'}
-            tone="text-orange-600"
+            tone="text-brand-600"
           />
           <KpiCard
             label="Landed total"
             value={fuelCost ? money(totalCost) : '--'}
             detail="Fuel + tip + other cost"
-            tone="text-orange-600"
+            tone="text-brand-600"
           />
         </section>
 
@@ -203,7 +203,7 @@ export default function ReceivingPage() {
               </div>
               <div>
                 <Label htmlFor="recv-supplier">
-                  Supplier <span className="text-orange-500">*</span>
+                  Supplier <span className="text-brand-500">*</span>
                 </Label>
                 <Input
                   id="recv-supplier"
@@ -226,7 +226,7 @@ export default function ReceivingPage() {
               </div>
               <div>
                 <Label htmlFor="recv-product">
-                  Product <span className="text-orange-500">*</span>
+                  Product <span className="text-brand-500">*</span>
                 </Label>
                 <Select
                   id="recv-product"
@@ -252,7 +252,7 @@ export default function ReceivingPage() {
               </div>
               <div>
                 <Label htmlFor="recv-tank">
-                  Tank <span className="text-orange-500">*</span>
+                  Tank <span className="text-brand-500">*</span>
                 </Label>
                 <Select
                   id="recv-tank"
@@ -271,7 +271,7 @@ export default function ReceivingPage() {
               </div>
               <div>
                 <Label htmlFor="recv-expected">
-                  Expected litres (delivery note) <span className="text-orange-500">*</span>
+                  Expected litres (delivery note) <span className="text-brand-500">*</span>
                 </Label>
                 <Input
                   id="recv-expected"
@@ -285,7 +285,7 @@ export default function ReceivingPage() {
               </div>
               <div>
                 <Label htmlFor="recv-actual">
-                  Actual / received litres <span className="text-orange-500">*</span>
+                  Actual / received litres <span className="text-brand-500">*</span>
                 </Label>
                 <Input
                   id="recv-actual"
@@ -321,7 +321,7 @@ export default function ReceivingPage() {
               </div>
               <div>
                 <Label htmlFor="recv-rate">
-                  Purchase rate per litre <span className="text-orange-500">*</span>
+                  Purchase rate per litre <span className="text-brand-500">*</span>
                 </Label>
                 <Input
                   id="recv-rate"
@@ -478,7 +478,7 @@ export default function ReceivingPage() {
                   <tr>
                     <td className="px-5 py-8 text-gray-500" colSpan={6}>
                       No receipts yet.{' '}
-                      <Link to="/opening" className="font-semibold text-orange-600">
+                      <Link to="/opening" className="font-semibold text-brand-600">
                         Open the day
                       </Link>{' '}
                       if you have not, then save the first tanker.

@@ -121,7 +121,7 @@ export default function UserFormPage() {
             title="Account details"
             description={`Current role: ${ROLE_LABELS[form.role]}. Staff enter daily figures. Accountants see credit and reports.`}
             action={
-              <Link to="/users" className="text-xs font-semibold text-orange-600 hover:text-orange-700">
+              <Link to="/users" className="text-xs font-semibold text-brand-600 hover:text-brand-700">
                 Back to users
               </Link>
             }

@@ -5,6 +5,7 @@ export { useOrganizations } from './useOrganizations';
 export { useStationAssets } from './useStationAssets';
 export { useSelectedStation } from './useSelectedStation';
 export { useDashboard } from './useDashboard';
+export { useCashCountDraft } from './useCashCountDraft';
 export {
   useAssetMutations,
   useDenominationMutations,

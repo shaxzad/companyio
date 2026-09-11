@@ -1,16 +1,17 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
+/** Fuel UI tokens: primary #fb6514 (brand/orange), white, black/gray, error/success status. */
 export const pageEyebrowClass =
-  'text-xs font-semibold uppercase tracking-[0.18em] text-orange-600';
+  'text-xs font-semibold uppercase tracking-[0.18em] text-brand-600';
 export const pageTitleClass = 'mt-2 text-2xl font-semibold text-gray-900 dark:text-white';
 export const pageSubClass = 'mt-1 text-sm text-gray-500 dark:text-gray-400';
 export const surfaceClass =
   'rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900';
 export const primaryActionClass =
-  'inline-flex items-center justify-center rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex items-center justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50';
 export const secondaryActionClass =
-  'inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:border-orange-300 hover:bg-orange-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200';
+  'inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:border-brand-300 hover:bg-brand-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200';
 
 export function PageShell({ children }: PropsWithChildren) {
   return (
@@ -22,8 +23,8 @@ export function PageShell({ children }: PropsWithChildren) {
 
 export function LiveBadge({ label = 'Operations live' }: { label?: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400">
-      <span className="h-2 w-2 rounded-full bg-emerald-500" /> {label}
+    <div className="flex items-center gap-2 rounded-full border border-success-200 bg-success-50 px-3 py-2 text-xs font-medium text-success-700 dark:border-success-800 dark:bg-success-500/10 dark:text-success-400">
+      <span className="h-2 w-2 rounded-full bg-success-500" /> {label}
     </div>
   );
 }
@@ -87,7 +88,7 @@ export function KpiCard({
   label,
   value,
   detail,
-  tone = 'text-orange-600',
+  tone = 'text-brand-600',
 }: {
   label: string;
   value: string;
@@ -117,11 +118,11 @@ export function QuickAction({
   return (
     <Link
       to={href}
-      className="group rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:border-orange-300 hover:bg-orange-50 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-orange-700 dark:hover:bg-orange-950/20"
+      className="group rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:border-brand-300 hover:bg-brand-50 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-brand-700 dark:hover:bg-brand-950/20"
     >
       <span className="flex items-center justify-between text-sm font-semibold text-gray-900 dark:text-white">
         {label}
-        <span className="text-lg text-orange-500 transition-transform group-hover:translate-x-1">
+        <span className="text-lg text-brand-500 transition-transform group-hover:translate-x-1">
           →
         </span>
       </span>
@@ -135,11 +136,12 @@ export function Notice({
   children,
 }: PropsWithChildren<{ tone: 'error' | 'success' | 'warning' }>) {
   const styles = {
-    error: 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-300',
+    error:
+      'border-error-200 bg-error-50 text-error-800 dark:border-error-800 dark:bg-error-500/10 dark:text-error-300',
     success:
-      'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300',
+      'border-success-200 bg-success-50 text-success-800 dark:border-success-800 dark:bg-success-500/10 dark:text-success-300',
     warning:
-      'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300',
+      'border-warning-200 bg-warning-50 text-warning-800 dark:border-warning-800 dark:bg-warning-500/10 dark:text-warning-300',
   };
   return <div className={`rounded-xl border px-4 py-3 text-sm ${styles[tone]}`}>{children}</div>;
 }

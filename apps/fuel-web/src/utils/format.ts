@@ -24,3 +24,15 @@ export const todayYmd = () =>
 
 
 export const emptyRecord = (): Record<string, string> => ({});
+
+/** Row amount for cash denomination counting (closing): quantity × note face value. */
+export const denominationRowAmount = (quantity: number, faceValue: number): number => {
+  if (!Number.isFinite(quantity) || !Number.isFinite(faceValue)) return 0;
+  if (quantity < 0 || faceValue < 0) return 0;
+  return quantity * faceValue;
+};
+
+/** Sum of denomination row amounts. */
+export const denominationCashTotal = (
+  rows: Array<{ quantity: number; faceValue: number }>
+): number => rows.reduce((sum, row) => sum + denominationRowAmount(row.quantity, row.faceValue), 0);

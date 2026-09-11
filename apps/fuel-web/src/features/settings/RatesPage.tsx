@@ -84,7 +84,7 @@ export default function RatesPage() {
             <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
               {selected ? String(selected.sellingPrice) : '—'}
             </p>
-            <p className="mt-1 text-xs text-orange-600">Per litre at the pump</p>
+            <p className="mt-1 text-xs text-brand-600">Per litre at the pump</p>
           </div>
         </div>
 
@@ -133,7 +133,7 @@ export default function RatesPage() {
             <form onSubmit={(event) => void submit(event)} className="grid gap-5 sm:grid-cols-2">
               <div>
                 <Label htmlFor="rate-price">
-                  Selling price per litre <span className="text-orange-500">*</span>
+                  Selling price per litre <span className="text-brand-500">*</span>
                 </Label>
                 <Input
                   id="rate-price"

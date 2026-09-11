@@ -232,14 +232,14 @@ export default function MeterSalesPage() {
               label={`Total Sale ${item.productCode}`}
               value={money(item.amount)}
               detail={`${item.litres.toLocaleString()} L · ${item.productName}`}
-              tone="text-emerald-600"
+              tone="text-success-600"
             />
           ))}
           <KpiCard
             label="All meters"
             value={money(liveTotals.amount)}
             detail={`${liveTotals.litres.toLocaleString()} L sold`}
-            tone="text-orange-600"
+            tone="text-brand-600"
           />
         </section>
 
@@ -248,7 +248,7 @@ export default function MeterSalesPage() {
         {needsOpening && (
           <Notice tone="warning">
             Open today’s business date first, then come back to enter meter closings.{' '}
-            <Link to="/opening" className="font-semibold text-orange-700 underline">
+            <Link to="/opening" className="font-semibold text-brand-700 underline">
               Daily opening
             </Link>
           </Notice>
@@ -315,7 +315,7 @@ export default function MeterSalesPage() {
                     </h2>
                     <p className="mt-1 text-sm text-gray-500">Every meter selling this product</p>
                   </div>
-                  <p className="text-sm font-semibold text-orange-600">
+                  <p className="text-sm font-semibold text-brand-600">
                     Total Sale {code} {money(total?.amount ?? 0)}
                   </p>
                 </div>

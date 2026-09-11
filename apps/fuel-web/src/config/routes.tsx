@@ -18,7 +18,7 @@ import UserFormPage from '../features/users/UserFormPage';
 import PumpProfilePage from '../features/settings/PumpProfilePage';
 import ProductsPage from '../features/settings/ProductsPage';
 import TanksMetersPage from '../features/settings/TanksMetersPage';
-import DenominationsPage from '../features/settings/DenominationsPage';
+import DenominationsPage from '../features/settings/denominations/DenominationsPage';
 import RatesPage from '../features/settings/RatesPage';
 import DailyOpeningPage from '../features/opening/DailyOpeningPage';
 import MeterSalesPage from '../features/sales/MeterSalesPage';
@@ -385,7 +385,7 @@ export const fuelRoutes: AppRouteModule[] = [
   },
   {
     key: 'settings-denominations',
-    name: 'Denominations',
+    name: 'Cash notes',
     path: '/settings/denominations',
     element: <DenominationsPage />,
     group: 'settings',

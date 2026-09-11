@@ -189,7 +189,7 @@ export default function TanksMetersPage() {
                       <td className="px-5 py-4 text-end">
                         <button
                           type="button"
-                          className="text-xs font-semibold text-orange-600"
+                          className="text-xs font-semibold text-brand-600"
                           onClick={() => {
                             setEditingTankId(tank.id);
                             setTankForm({
@@ -261,7 +261,7 @@ export default function TanksMetersPage() {
                   editingTankId ? (
                     <button
                       type="button"
-                      className="text-xs font-semibold text-orange-600"
+                      className="text-xs font-semibold text-brand-600"
                       onClick={() => {
                         setEditingTankId(null);
                         setTankForm(emptyTank());

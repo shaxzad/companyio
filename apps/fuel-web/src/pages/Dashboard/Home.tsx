@@ -20,21 +20,21 @@ const activity = [
     reference: 'ABC Construction · GLT-1234',
     amount: 'PKR 42,000',
     time: '10:42 AM',
-    tone: 'bg-orange-100 text-orange-700',
+    tone: 'bg-brand-100 text-brand-700',
   },
   {
     label: 'Fuel received',
     reference: 'Northern Fuels · Tanker GB-09',
     amount: '+8,000 L',
     time: '09:15 AM',
-    tone: 'bg-sky-100 text-sky-700',
+    tone: 'bg-brand-100 text-brand-700',
   },
   {
     label: 'Payment received',
     reference: 'Mountain Contractors',
     amount: 'PKR 85,000',
     time: '08:30 AM',
-    tone: 'bg-emerald-100 text-emerald-700',
+    tone: 'bg-success-100 text-success-700',
   },
 ];
 
@@ -50,25 +50,25 @@ export default function Home() {
           label: "Today's sales",
           value: formatMoney(dashboard.today.sales),
           detail: 'Confirmed station sales',
-          tone: 'text-emerald-600',
+          tone: 'text-success-600',
         },
         {
           label: 'Litres sold',
           value: `${dashboard.today.litres.toLocaleString()} L`,
           detail: 'Across all active nozzles',
-          tone: 'text-sky-600',
+          tone: 'text-brand-600',
         },
         {
           label: 'Fuel received',
           value: formatMoney(dashboard.today.receivedCost),
           detail: 'Confirmed receipts today',
-          tone: 'text-orange-600',
+          tone: 'text-brand-600',
         },
         {
           label: 'Credit outstanding',
           value: formatMoney(dashboard.today.creditOutstanding),
           detail: 'Organization balances',
-          tone: 'text-rose-600',
+          tone: 'text-error-600',
         },
       ]
     : [];
@@ -106,7 +106,7 @@ export default function Home() {
               </div>
               <a
                 href="/inventory"
-                className="text-xs font-semibold text-orange-600 hover:text-orange-700"
+                className="text-xs font-semibold text-brand-600 hover:text-brand-700"
               >
                 View ledger
               </a>
@@ -116,7 +116,7 @@ export default function Home() {
                 const percent = tank.capacity
                   ? Math.min(100, (tank.currentStock / tank.capacity) * 100)
                   : 0;
-                const colors = ['bg-orange-500', 'bg-sky-500', 'bg-amber-500'];
+                const colors = ['bg-brand-500', 'bg-brand-500', 'bg-amber-500'];
                 return (
                   <div key={tank.id}>
                     <div className="mb-2 flex items-center justify-between text-sm">
@@ -149,12 +149,12 @@ export default function Home() {
           <article className={`${surfaceClass} bg-gray-950 p-5 text-white dark:bg-gray-950`}>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-400">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-400">
                   Shift control
                 </p>
                 <h2 className="mt-2 text-xl font-semibold">Morning shift</h2>
               </div>
-              <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-300">
+              <span className="rounded-full bg-success-500/15 px-2.5 py-1 text-xs font-medium text-success-300">
                 Open
               </span>
             </div>
@@ -230,7 +230,7 @@ export default function Home() {
                 Today at Gilgit Station
               </p>
             </div>
-            <button className="text-xs font-semibold text-orange-600 hover:text-orange-700">
+            <button className="text-xs font-semibold text-brand-600 hover:text-brand-700">
               View all
             </button>
           </div>

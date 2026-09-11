@@ -48,9 +48,9 @@ export default function FuelModulePage({
         />
 
         <section className="grid gap-4 sm:grid-cols-3">
-          <KpiCard label="Records today" value="--" detail="Confirmed for this shift" tone="text-emerald-600" />
-          <KpiCard label="Pending review" value="--" detail="Waiting on approval" tone="text-orange-600" />
-          <KpiCard label="This month" value="--" detail="Station total" tone="text-sky-600" />
+          <KpiCard label="Records today" value="--" detail="Confirmed for this shift" tone="text-success-600" />
+          <KpiCard label="Pending review" value="--" detail="Waiting on approval" tone="text-brand-600" />
+          <KpiCard label="This month" value="--" detail="Station total" tone="text-brand-600" />
         </section>
 
         <Surface>
@@ -58,7 +58,7 @@ export default function FuelModulePage({
             title={`${title} workspace`}
             description="This page is connected to the fuel application structure and ready for its API-backed workflow."
             action={
-              <Link to="/" className="text-xs font-semibold text-orange-600 hover:text-orange-700">
+              <Link to="/" className="text-xs font-semibold text-brand-600 hover:text-brand-700">
                 Back to overview
               </Link>
             }
