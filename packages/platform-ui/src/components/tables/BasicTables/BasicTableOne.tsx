@@ -54,7 +54,7 @@ const tableData: Order[] = [
       name: 'Zain Geidt',
       role: 'Content Writing',
     },
-    projectName: 'Blog Writing',
+    projectName: 'Station Handbook',
     team: {
       images: ['/images/user/user-27.jpg'],
     },

@@ -1,13 +1,10 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import { Badge, Input, Label, PageMeta } from '@companyio/platform-ui';
-import {
-  createProduct,
-  listFuelTypes,
-  updateProduct,
-  type FuelType,
-} from '../../api/masterApi';
+import { useFuelTypes, useProductMutations } from '../../hooks';
+import type { FuelType } from '../../types';
+import { parseFinancialInput, requireFinancialInput, toErrorMessage, toFinancialInput } from '../../utils';
 import { canEditPath, roleOf } from '../auth/roles';
 import {
   Notice,
@@ -33,21 +30,15 @@ export default function ProductsPage() {
   const location = useLocation();
   const role = roleOf(user);
   const canEdit = Boolean(role && canEditPath(role, location.pathname));
-  const [products, setProducts] = useState<FuelType[]>([]);
+  const { data: products = [], error: productsError } = useFuelTypes(true);
+  const { createProduct, updateProduct } = useProductMutations();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
 
-  const load = () =>
-    listFuelTypes(true)
-      .then(setProducts)
-      .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)));
-
-  useEffect(() => {
-    void load();
-  }, []);
+  const displayError = error || (productsError ? toErrorMessage(productsError) : '');
+  const isSaving = createProduct.isPending || updateProduct.isPending;
 
   const update = (field: keyof ReturnType<typeof emptyForm>, value: string) =>
     setForm((current) => ({ ...current, [field]: value }));
@@ -57,10 +48,10 @@ export default function ProductsPage() {
     setForm({
       name: product.name,
       code: product.code,
-      sellingPrice: String(product.sellingPrice ?? ''),
-      purchasePrice: String(product.purchasePrice ?? ''),
-      minimumStock: String(product.minimumStock ?? '0'),
-      reorderLevel: String(product.reorderLevel ?? '0'),
+      sellingPrice: toFinancialInput(product.sellingPrice),
+      purchasePrice: toFinancialInput(product.purchasePrice),
+      minimumStock: toFinancialInput(product.minimumStock),
+      reorderLevel: toFinancialInput(product.reorderLevel),
     });
   };
 
@@ -69,26 +60,35 @@ export default function ProductsPage() {
     if (!canEdit) return;
     setError('');
     setStatus('');
-    setIsSaving(true);
-    const payload = {
-      name: form.name,
-      code: form.code,
-      sellingPrice: Number(form.sellingPrice),
-      purchasePrice: Number(form.purchasePrice),
-      minimumStock: Number(form.minimumStock || 0),
-      reorderLevel: Number(form.reorderLevel || 0),
-    };
     try {
-      if (editingId) await updateProduct(editingId, payload);
-      else await createProduct(payload);
+      const payload = {
+        name: form.name,
+        code: form.code,
+        sellingPrice: requireFinancialInput(form.sellingPrice, 'Selling price'),
+        purchasePrice: requireFinancialInput(form.purchasePrice, 'Purchase price'),
+        minimumStock: parseFinancialInput(form.minimumStock) ?? 0,
+        reorderLevel: parseFinancialInput(form.reorderLevel) ?? 0,
+      };
+      if (editingId) await updateProduct.mutateAsync({ id: editingId, data: payload });
+      else await createProduct.mutateAsync(payload);
       setStatus(editingId ? 'Product updated.' : 'Product added.');
       setEditingId(null);
       setForm(emptyForm());
-      await load();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
-    } finally {
-      setIsSaving(false);
+      setError(toErrorMessage(caught));
+    }
+  };
+
+  const toggleActive = async (product: FuelType) => {
+    setError('');
+    setStatus('');
+    try {
+      await updateProduct.mutateAsync({
+        id: product.id,
+        data: { active: product.active === false },
+      });
+    } catch (caught) {
+      setError(toErrorMessage(caught));
     }
   };
 
@@ -147,11 +147,7 @@ export default function ProductsPage() {
                           <button
                             type="button"
                             className={`${secondaryActionClass} !px-3 !py-1.5 text-xs`}
-                            onClick={() =>
-                              void updateProduct(product.id, { active: product.active === false }).then(
-                                load
-                              )
-                            }
+                            onClick={() => void toggleActive(product)}
                           >
                             {product.active === false ? 'Activate' : 'Deactivate'}
                           </button>
@@ -193,9 +189,9 @@ export default function ProductsPage() {
               }
             />
             <form onSubmit={(event) => void submit(event)} className="grid gap-5 sm:grid-cols-2">
-              {error && (
+              {displayError && (
                 <div className="sm:col-span-2">
-                  <Notice tone="error">{error}</Notice>
+                  <Notice tone="error">{displayError}</Notice>
                 </div>
               )}
               {status && (

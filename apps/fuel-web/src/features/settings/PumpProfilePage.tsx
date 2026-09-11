@@ -2,7 +2,8 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import { Input, Label, PageMeta } from '@companyio/platform-ui';
-import { createStation, listStations, updateStation, type Station } from '../../api/masterApi';
+import { useStationMutations, useStations } from '../../hooks';
+import { toErrorMessage } from '../../utils';
 import { canEditPath, roleOf } from '../auth/roles';
 import { Notice, Surface, SurfaceHeader, primaryActionClass } from '../../ui/page';
 import { SettingsChrome } from './SettingsChrome';
@@ -12,7 +13,9 @@ export default function PumpProfilePage() {
   const location = useLocation();
   const role = roleOf(user);
   const canEdit = Boolean(role && canEditPath(role, location.pathname));
-  const [station, setStation] = useState<Station | null>(null);
+  const { data: stations = [], error: stationsError, isLoading } = useStations();
+  const { createStation, updateStation } = useStationMutations();
+  const station = stations[0] ?? null;
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [address, setAddress] = useState('');
@@ -20,44 +23,36 @@ export default function PumpProfilePage() {
   const [logoUrl, setLogoUrl] = useState('');
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-
-  const load = () =>
-    listStations()
-      .then((stations) => {
-        const current = stations[0] ?? null;
-        setStation(current);
-        setName(current?.name ?? '');
-        setCode(current?.code ?? '');
-        setAddress(current?.address ?? '');
-        setCity(current?.city ?? '');
-        setLogoUrl(current?.logoUrl ?? '');
-      })
-      .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)));
 
   useEffect(() => {
-    void load();
-  }, []);
+    setName(station?.name ?? '');
+    setCode(station?.code ?? '');
+    setAddress(station?.address ?? '');
+    setCity(station?.city ?? '');
+    setLogoUrl(station?.logoUrl ?? '');
+  }, [station]);
+
+  const displayError = error || (stationsError ? toErrorMessage(stationsError) : '');
+  const isSaving = createStation.isPending || updateStation.isPending;
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!canEdit) return;
     setError('');
     setStatus('');
-    setIsSaving(true);
     try {
       if (station) {
-        await updateStation(station.id, { name, address, city, logoUrl });
+        await updateStation.mutateAsync({
+          id: station.id,
+          data: { name, address, city, logoUrl },
+        });
         setStatus('Pump profile saved.');
       } else {
-        await createStation({ name, code, address, city });
+        await createStation.mutateAsync({ name, code, address, city });
         setStatus('Pump created.');
       }
-      await load();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
-    } finally {
-      setIsSaving(false);
+      setError(toErrorMessage(caught));
     }
   };
 
@@ -78,15 +73,18 @@ export default function PumpProfilePage() {
             description="This is the pump later features attach tanks, meters, sales, and closings to."
           />
           <form onSubmit={(event) => void submit(event)} className="grid gap-5 sm:grid-cols-2">
-            {error && (
+            {displayError && (
               <div className="sm:col-span-2">
-                <Notice tone="error">{error}</Notice>
+                <Notice tone="error">{displayError}</Notice>
               </div>
             )}
             {status && (
               <div className="sm:col-span-2">
                 <Notice tone="success">{status}</Notice>
               </div>
+            )}
+            {isLoading && (
+              <p className="sm:col-span-2 text-sm text-gray-500">Loading pump profile...</p>
             )}
             <div>
               <Label htmlFor="pump-name">

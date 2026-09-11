@@ -1,12 +1,12 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '@companyio/auth-react';
 import {
   AssignableFuelRoleSchema,
-  authErrorMessage,
   type AssignableFuelRole,
 } from '@companyio/auth-contracts';
 import { Input, Label, PageMeta, Select } from '@companyio/platform-ui';
+import { useUser, useUserMutations } from '../../hooks';
+import { toErrorMessage } from '../../utils';
 import { ROLE_LABELS, ROLE_OPTIONS } from '../auth/roles';
 import {
   LiveBadge,
@@ -38,35 +38,30 @@ const emptyForm = (): FormState => ({
 export default function UserFormPage() {
   const { userId } = useParams();
   const isCreate = !userId;
-  const { client } = useAuth();
   const navigate = useNavigate();
+  const { data: existingUser, isLoading, error: userError, isFetched } = useUser(userId);
+  const { createUser, updateUser } = useUserMutations();
   const [form, setForm] = useState<FormState>(emptyForm);
   const [error, setError] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(!isCreate);
 
   useEffect(() => {
-    if (!userId) return;
-    setIsLoading(true);
-    client
-      .listUsers()
-      .then((users) => {
-        const match = users.find((item) => item.id === userId);
-        if (!match || match.role === 'owner') {
-          navigate('/users', { replace: true });
-          return;
-        }
-        setForm({
-          name: match.name,
-          email: match.email,
-          password: '',
-          role: match.role,
-          isActive: match.isActive,
-        });
-      })
-      .catch((caught) => setError(authErrorMessage(caught, 'Unable to load this user.')))
-      .finally(() => setIsLoading(false));
-  }, [client, navigate, userId]);
+    if (isCreate || !isFetched) return;
+    if (!existingUser || existingUser.role === 'owner') {
+      navigate('/users', { replace: true });
+      return;
+    }
+    setForm({
+      name: existingUser.name,
+      email: existingUser.email,
+      password: '',
+      role: existingUser.role,
+      isActive: existingUser.isActive,
+    });
+  }, [existingUser, isCreate, isFetched, navigate]);
+
+  const displayError =
+    error || (userError ? toErrorMessage(userError, 'Unable to load this user.') : '');
+  const isSaving = createUser.isPending || updateUser.isPending;
 
   const update = <K extends keyof FormState>(field: K, value: FormState[K]) =>
     setForm((current) => ({ ...current, [field]: value }));
@@ -74,33 +69,33 @@ export default function UserFormPage() {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError('');
-    setIsSaving(true);
     try {
       if (isCreate) {
-        await client.createUser({
+        await createUser.mutateAsync({
           name: form.name,
           email: form.email,
           password: form.password,
           role: form.role,
         });
       } else if (userId) {
-        await client.updateUser(userId, {
-          name: form.name,
-          email: form.email,
-          role: form.role,
-          isActive: form.isActive,
-          ...(form.password ? { password: form.password } : {}),
+        await updateUser.mutateAsync({
+          id: userId,
+          data: {
+            name: form.name,
+            email: form.email,
+            role: form.role,
+            isActive: form.isActive,
+            ...(form.password ? { password: form.password } : {}),
+          },
         });
       }
       navigate('/users', { replace: true });
     } catch (caught) {
-      setError(authErrorMessage(caught, 'Unable to save the user.'));
-    } finally {
-      setIsSaving(false);
+      setError(toErrorMessage(caught, 'Unable to save the user.'));
     }
   };
 
-  if (isLoading) {
+  if (!isCreate && isLoading) {
     return (
       <PageShell>
         <p className="py-12 text-sm text-gray-500">Loading user...</p>
@@ -132,7 +127,7 @@ export default function UserFormPage() {
             }
           />
           <form onSubmit={(event) => void submit(event)} className="space-y-5">
-            {error && <Notice tone="error">{error}</Notice>}
+            {displayError && <Notice tone="error">{displayError}</Notice>}
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
                 <Label htmlFor="name">Name</Label>

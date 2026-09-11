@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
 import { PageMeta } from '@companyio/platform-ui';
 import { useAuth } from '@companyio/auth-react';
-import { getFuelDashboard, type FuelDashboard } from '../../api/fuelApi';
+import { useDashboard } from '../../hooks';
+import { formatMoney, toErrorMessage } from '../../utils';
 import { canAccessPath, ROLE_LABELS, roleOf } from '../../features/auth/roles';
 import {
   KpiCard,
@@ -13,9 +13,6 @@ import {
   primaryActionClass,
   surfaceClass,
 } from '../../ui/page';
-
-const formatMoney = (value: number) =>
-  `PKR ${value.toLocaleString('en-PK', { maximumFractionDigits: 0 })}`;
 
 const activity = [
   {
@@ -44,14 +41,8 @@ const activity = [
 export default function Home() {
   const { user } = useAuth();
   const role = roleOf(user);
-  const [dashboard, setDashboard] = useState<FuelDashboard | null>(null);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    getFuelDashboard()
-      .then(setDashboard)
-      .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)));
-  }, []);
+  const { data: dashboard, error: dashboardError } = useDashboard();
+  const error = dashboardError ? toErrorMessage(dashboardError) : '';
 
   const kpis = dashboard
     ? [

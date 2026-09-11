@@ -2,13 +2,17 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import { Input, Label, PageMeta, Select } from '@companyio/platform-ui';
-import { getStations, type Station } from '../../api/fuelApi';
+import { useMeterSaleSheet, usePostMeterSales, useSelectedStation } from '../../hooks';
+import type { MeterSaleRow } from '../../types';
 import {
-  getMeterSaleSheet,
-  postMeterSales,
-  type MeterSaleRow,
-  type MeterSaleSheet,
-} from '../../api/meterSalesApi';
+  emptyRecord,
+  formatMoney,
+  parseFinancialInput,
+  requireFinancialInput,
+  roundTo,
+  toErrorMessage,
+  toFinancialInput,
+} from '../../utils';
 import { canEditPath, roleOf } from '../auth/roles';
 import {
   KpiCard,
@@ -22,17 +26,20 @@ import {
   surfaceClass,
 } from '../../ui/page';
 
-const round = (value: number, digits: number) => {
-  const factor = 10 ** digits;
-  return Math.round((value + Number.EPSILON) * factor) / factor;
-};
-
 const money = (value: number) =>
-  `PKR ${value.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  formatMoney(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const litresOf = (closing: string, opening: number) => {
   if (closing === '') return 0;
-  return round(Number(closing) - opening, 3);
+  const parsed = parseFinancialInput(closing);
+  if (parsed === null) return 0;
+  return roundTo(parsed - opening, 3);
+};
+
+const rateForRow = (raw: string | undefined, suggestedRate: number) => {
+  const entered = parseFinancialInput(raw ?? '');
+  if (entered !== null) return entered;
+  return suggestedRate > 0 ? suggestedRate : null;
 };
 
 export default function MeterSalesPage() {
@@ -40,60 +47,53 @@ export default function MeterSalesPage() {
   const location = useLocation();
   const role = roleOf(user);
   const canEdit = Boolean(role && canEditPath(role, location.pathname));
-  const [stations, setStations] = useState<Station[]>([]);
-  const [stationId, setStationId] = useState('');
-  const [sheet, setSheet] = useState<MeterSaleSheet | null>(null);
-  const [closings, setClosings] = useState<Record<string, string>>({});
-  const [rates, setRates] = useState<Record<string, string>>({});
-  const [reasons, setReasons] = useState<Record<string, string>>({});
+  const { stations, stationId, setStationId, error: stationsError } = useSelectedStation();
+  const {
+    data: sheet = null,
+    isLoading,
+    error: sheetError,
+    refetch,
+  } = useMeterSaleSheet(stationId);
+  const postMeterSales = usePostMeterSales();
+  const [closings, setClosings] = useState<Record<string, string>>(emptyRecord);
+  const [rates, setRates] = useState<Record<string, string>>(emptyRecord);
+  const [reasons, setReasons] = useState<Record<string, string>>(emptyRecord);
   const [soldAt, setSoldAt] = useState('');
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
-  const [needsOpening, setNeedsOpening] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    getStations()
-      .then((loaded) => {
-        setStations(loaded);
-        if (loaded.length === 1) setStationId(loaded[0].id);
-      })
-      .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)));
-  }, []);
+    if (!sheet) return;
+    setClosings(
+      Object.fromEntries(
+        sheet.rows.map((row) => [
+          row.nozzleId,
+          row.closingReading === null
+            ? ''
+            : toFinancialInput(row.closingReading, { allowZero: true }),
+        ])
+      )
+    );
+    setRates(
+      Object.fromEntries(
+        sheet.rows.map((row) => [
+          row.nozzleId,
+          // Suggested/posted rate: hide bare 0 so staff must confirm a real selling rate.
+          toFinancialInput(row.unitPrice, { allowZero: Boolean(sheet.alreadyPosted) }),
+        ])
+      )
+    );
+    setReasons(
+      Object.fromEntries(sheet.rows.map((row) => [row.nozzleId, row.rateOverrideReason ?? '']))
+    );
+  }, [sheet]);
 
-  const loadSheet = (id: string) => {
-    setIsLoading(true);
-    setError('');
-    setNeedsOpening(false);
-    getMeterSaleSheet(id)
-      .then((loaded) => {
-        setSheet(loaded);
-        setClosings(
-          Object.fromEntries(
-            loaded.rows.map((row) => [
-              row.nozzleId,
-              row.closingReading === null ? '' : String(row.closingReading),
-            ])
-          )
-        );
-        setRates(Object.fromEntries(loaded.rows.map((row) => [row.nozzleId, String(row.unitPrice)])));
-        setReasons(
-          Object.fromEntries(loaded.rows.map((row) => [row.nozzleId, row.rateOverrideReason ?? '']))
-        );
-      })
-      .catch((caught) => {
-        const message = caught instanceof Error ? caught.message : String(caught);
-        setSheet(null);
-        if (message.toLowerCase().includes('open a business date')) setNeedsOpening(true);
-        setError(message);
-      })
-      .finally(() => setIsLoading(false));
-  };
-
-  useEffect(() => {
-    if (stationId) loadSheet(stationId);
-  }, [stationId]);
+  const sheetErrorMessage = sheetError ? toErrorMessage(sheetError) : '';
+  const needsOpening = sheetErrorMessage.toLowerCase().includes('open a business date');
+  const displayError =
+    error ||
+    (stationsError ? toErrorMessage(stationsError) : '') ||
+    (sheetErrorMessage && !needsOpening ? sheetErrorMessage : '');
 
   const groups = useMemo(() => {
     const rows = sheet?.rows ?? [];
@@ -108,17 +108,22 @@ export default function MeterSalesPage() {
     const byProduct = groups.map(([code, rows]) => {
       const lines = rows.map((row) => {
         const litres = litresOf(closings[row.nozzleId] ?? '', row.openingReading);
-        const rate = Number(rates[row.nozzleId] || row.suggestedRate);
-        return { litres, amount: round(litres * rate, 2), productName: row.productName, productCode: code };
+        const rate = rateForRow(rates[row.nozzleId], row.suggestedRate) ?? 0;
+        return {
+          litres,
+          amount: roundTo(litres * rate, 2),
+          productName: row.productName,
+          productCode: code,
+        };
       });
       return {
         productCode: code,
         productName: rows[0]?.productName ?? code,
-        litres: round(
+        litres: roundTo(
           lines.reduce((sum, line) => sum + line.litres, 0),
           3
         ),
-        amount: round(
+        amount: roundTo(
           lines.reduce((sum, line) => sum + line.amount, 0),
           2
         ),
@@ -126,11 +131,11 @@ export default function MeterSalesPage() {
     });
     return {
       byProduct,
-      litres: round(
+      litres: roundTo(
         byProduct.reduce((sum, item) => sum + item.litres, 0),
         3
       ),
-      amount: round(
+      amount: roundTo(
         byProduct.reduce((sum, item) => sum + item.amount, 0),
         2
       ),
@@ -140,9 +145,13 @@ export default function MeterSalesPage() {
   const readOnly = Boolean(sheet?.alreadyPosted) || !canEdit;
   const allClosed =
     (sheet?.rows.length ?? 0) > 0 &&
-    (sheet?.rows ?? []).every((row) => closings[row.nozzleId] !== '' && Number(closings[row.nozzleId]) >= row.openingReading);
+    (sheet?.rows ?? []).every((row) => {
+      const closing = parseFinancialInput(closings[row.nozzleId] ?? '');
+      return closing !== null && closing >= row.openingReading;
+    });
   const overrideOk = (sheet?.rows ?? []).every((row) => {
-    const rate = Number(rates[row.nozzleId] || row.suggestedRate);
+    const rate = rateForRow(rates[row.nozzleId], row.suggestedRate);
+    if (rate === null) return false;
     if (rate.toFixed(2) === row.suggestedRate.toFixed(2)) return true;
     return Boolean(reasons[row.nozzleId]?.trim());
   });
@@ -152,33 +161,41 @@ export default function MeterSalesPage() {
     if (!sheet || !canEdit || sheet.alreadyPosted) return;
     setError('');
     setStatus('');
-    setIsSaving(true);
     try {
-      const saved = await postMeterSales({
+      const lines = sheet.rows.map((row) => {
+        const closingMeter = requireFinancialInput(
+          closings[row.nozzleId] ?? '',
+          `Closing meter for ${row.pumpName} nozzle ${row.nozzleNumber}`
+        );
+        const rate = rateForRow(rates[row.nozzleId], row.suggestedRate);
+        if (rate === null) {
+          throw new Error(
+            `Selling rate for ${row.pumpName} nozzle ${row.nozzleNumber} is required.`
+          );
+        }
+        const overridden = rate.toFixed(2) !== row.suggestedRate.toFixed(2);
+        return {
+          nozzleId: row.nozzleId,
+          closingMeter,
+          unitPrice: rate,
+          ...(overridden ? { rateOverrideReason: reasons[row.nozzleId]?.trim() } : {}),
+        };
+      });
+
+      const saved = await postMeterSales.mutateAsync({
         stationId,
         businessDayId: sheet.businessDay.id,
         ...(soldAt ? { soldAt: new Date(soldAt).toISOString() } : {}),
-        lines: sheet.rows.map((row) => {
-          const rate = Number(rates[row.nozzleId] || row.suggestedRate);
-          const overridden = rate.toFixed(2) !== row.suggestedRate.toFixed(2);
-          return {
-            nozzleId: row.nozzleId,
-            closingMeter: Number(closings[row.nozzleId]),
-            unitPrice: rate,
-            ...(overridden ? { rateOverrideReason: reasons[row.nozzleId]?.trim() } : {}),
-          };
-        }),
+        lines,
       });
       setStatus(
         `${saved.saleNumber} posted. Totals: ${saved.productTotals
           .map((item) => `Total Sale ${item.productCode} ${money(item.amount)}`)
           .join(' · ')}.`
       );
-      loadSheet(stationId);
+      void refetch();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
-    } finally {
-      setIsSaving(false);
+      setError(toErrorMessage(caught));
     }
   };
 
@@ -195,24 +212,29 @@ export default function MeterSalesPage() {
           action={
             <LiveBadge
               label={
-                sheet?.alreadyPosted ? 'Sheet posted' : sheet ? 'Open day — enter closings' : 'Select a station'
+                sheet?.alreadyPosted
+                  ? 'Sheet posted'
+                  : sheet
+                    ? 'Open day — enter closings'
+                    : 'Select a station'
               }
             />
           }
         />
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {(liveTotals.byProduct.length ? liveTotals.byProduct : [{ productCode: '—', productName: 'Product total', litres: 0, amount: 0 }]).map(
-            (item) => (
-              <KpiCard
-                key={item.productCode}
-                label={`Total Sale ${item.productCode}`}
-                value={money(item.amount)}
-                detail={`${item.litres.toLocaleString()} L · ${item.productName}`}
-                tone="text-emerald-600"
-              />
-            )
-          )}
+          {(liveTotals.byProduct.length
+            ? liveTotals.byProduct
+            : [{ productCode: '—', productName: 'Product total', litres: 0, amount: 0 }]
+          ).map((item) => (
+            <KpiCard
+              key={item.productCode}
+              label={`Total Sale ${item.productCode}`}
+              value={money(item.amount)}
+              detail={`${item.litres.toLocaleString()} L · ${item.productName}`}
+              tone="text-emerald-600"
+            />
+          ))}
           <KpiCard
             label="All meters"
             value={money(liveTotals.amount)}
@@ -221,7 +243,7 @@ export default function MeterSalesPage() {
           />
         </section>
 
-        {error && <Notice tone="error">{error}</Notice>}
+        {displayError && <Notice tone="error">{displayError}</Notice>}
         {status && <Notice tone="success">{status}</Notice>}
         {needsOpening && (
           <Notice tone="warning">
@@ -315,7 +337,7 @@ export default function MeterSalesPage() {
                         const closing = closings[row.nozzleId] ?? '';
                         const rate = Number(rates[row.nozzleId] || row.suggestedRate);
                         const litres = litresOf(closing, row.openingReading);
-                        const amount = round(litres * rate, 2);
+                        const amount = roundTo(litres * rate, 2);
                         const overridden = rate.toFixed(2) !== row.suggestedRate.toFixed(2);
                         return (
                           <tr key={row.nozzleId}>
@@ -359,10 +381,14 @@ export default function MeterSalesPage() {
                                 disabled={readOnly}
                               />
                             </td>
-                            <td className="px-4 py-3 font-semibold">{closing === '' ? '—' : money(amount)}</td>
+                            <td className="px-4 py-3 font-semibold">
+                              {closing === '' ? '—' : money(amount)}
+                            </td>
                             <td className="min-w-48 px-4 py-3">
                               <Input
-                                placeholder={overridden ? 'Why was the rate changed?' : 'Needed only if rate changes'}
+                                placeholder={
+                                  overridden ? 'Why was the rate changed?' : 'Needed only if rate changes'
+                                }
                                 value={reasons[row.nozzleId] ?? ''}
                                 onChange={(event) =>
                                   setReasons((current) => ({
@@ -395,9 +421,9 @@ export default function MeterSalesPage() {
               <button
                 type="submit"
                 className={primaryActionClass}
-                disabled={!allClosed || !overrideOk || isSaving}
+                disabled={!allClosed || !overrideOk || postMeterSales.isPending}
               >
-                {isSaving ? 'Posting...' : 'Post meter sales'}
+                {postMeterSales.isPending ? 'Posting...' : 'Post meter sales'}
               </button>
             </div>
           )}

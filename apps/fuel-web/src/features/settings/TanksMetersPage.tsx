@@ -1,19 +1,14 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import { Input, Label, PageMeta, Select } from '@companyio/platform-ui';
 import {
-  createNozzle,
-  createPump,
-  createTank,
-  listFuelTypes,
-  listStationAssets,
-  listStations,
-  updateTank,
-  type FuelType,
-  type Station,
-  type StationAssets,
-} from '../../api/masterApi';
+  useAssetMutations,
+  useFuelTypes,
+  useSelectedStation,
+  useStationAssets,
+} from '../../hooks';
+import { requireFinancialInput, toErrorMessage, toFinancialInput } from '../../utils';
 import { canEditPath, roleOf } from '../auth/roles';
 import {
   Notice,
@@ -39,10 +34,10 @@ export default function TanksMetersPage() {
   const location = useLocation();
   const role = roleOf(user);
   const canEdit = Boolean(role && canEditPath(role, location.pathname));
-  const [stations, setStations] = useState<Station[]>([]);
-  const [stationId, setStationId] = useState('');
-  const [products, setProducts] = useState<FuelType[]>([]);
-  const [assets, setAssets] = useState<StationAssets | null>(null);
+  const { stations, stationId, setStationId, error: stationsError } = useSelectedStation();
+  const { data: products = [], error: productsError } = useFuelTypes();
+  const { data: assets = null, error: assetsError } = useStationAssets(stationId);
+  const { createTank, updateTank, createPump, createNozzle } = useAssetMutations(stationId);
   const [tankForm, setTankForm] = useState(emptyTank);
   const [editingTankId, setEditingTankId] = useState<string | null>(null);
   const [pumpForm, setPumpForm] = useState(emptyPump);
@@ -50,26 +45,8 @@ export default function TanksMetersPage() {
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
 
-  useEffect(() => {
-    Promise.all([listStations(), listFuelTypes()])
-      .then(([loadedStations, loadedProducts]) => {
-        setStations(loadedStations);
-        setProducts(loadedProducts);
-        if (loadedStations[0]) setStationId(loadedStations[0].id);
-      })
-      .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)));
-  }, []);
-
-  const loadAssets = () => {
-    if (!stationId) return Promise.resolve();
-    return listStationAssets(stationId)
-      .then(setAssets)
-      .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)));
-  };
-
-  useEffect(() => {
-    void loadAssets();
-  }, [stationId]);
+  const queryError = stationsError || productsError || assetsError;
+  const displayError = error || (queryError ? toErrorMessage(queryError) : '');
 
   const productOptions = useMemo(
     () => products.map((product) => ({ value: product.id, label: `${product.name} (${product.code})` })),
@@ -97,29 +74,33 @@ export default function TanksMetersPage() {
     try {
       await work();
       setStatus(message);
-      await loadAssets();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+      setError(toErrorMessage(caught));
     }
   };
 
   const submitTank = (event: FormEvent) => {
     event.preventDefault();
     void run(async () => {
+      const capacity = requireFinancialInput(tankForm.capacity, 'Tank capacity');
+      const openingStock = requireFinancialInput(tankForm.openingStock, 'Opening stock');
       if (editingTankId) {
-        await updateTank(editingTankId, {
-          name: tankForm.name,
-          capacity: Number(tankForm.capacity),
-          openingStock: Number(tankForm.openingStock || 0),
+        await updateTank.mutateAsync({
+          id: editingTankId,
+          data: {
+            name: tankForm.name,
+            capacity,
+            openingStock,
+          },
         });
         setEditingTankId(null);
       } else {
-        await createTank({
+        await createTank.mutateAsync({
           stationId,
           name: tankForm.name,
           fuelTypeId: tankForm.fuelTypeId,
-          capacity: Number(tankForm.capacity),
-          openingStock: Number(tankForm.openingStock || 0),
+          capacity,
+          openingStock,
         });
       }
       setTankForm(emptyTank());
@@ -128,28 +109,28 @@ export default function TanksMetersPage() {
 
   const submitPump = (event: FormEvent) => {
     event.preventDefault();
-    void run(
-      () =>
-        createPump({ stationId, number: pumpForm.number, name: pumpForm.name }).then(() =>
-          setPumpForm(emptyPump())
-        ),
-      'Meter / pump added.'
-    );
+    void run(async () => {
+      await createPump.mutateAsync({
+        stationId,
+        number: pumpForm.number,
+        name: pumpForm.name,
+      });
+      setPumpForm(emptyPump());
+    }, 'Meter / pump added.');
   };
 
   const submitNozzle = (event: FormEvent) => {
     event.preventDefault();
-    void run(
-      () =>
-        createNozzle({
-          pumpId: nozzleForm.pumpId,
-          fuelTypeId: nozzleForm.fuelTypeId,
-          tankId: nozzleForm.tankId || undefined,
-          number: nozzleForm.number,
-          openingMeter: Number(nozzleForm.openingMeter || 0),
-        }).then(() => setNozzleForm(emptyNozzle())),
-      'Nozzle added.'
-    );
+    void run(async () => {
+      await createNozzle.mutateAsync({
+        pumpId: nozzleForm.pumpId,
+        fuelTypeId: nozzleForm.fuelTypeId,
+        tankId: nozzleForm.tankId || undefined,
+        number: nozzleForm.number,
+        openingMeter: requireFinancialInput(nozzleForm.openingMeter, 'Opening meter'),
+      });
+      setNozzleForm(emptyNozzle());
+    }, 'Nozzle added.');
   };
 
   return (
@@ -163,7 +144,7 @@ export default function TanksMetersPage() {
         description="Link each tank to a product, then attach nozzles / meters so later shifts can record multiple readings per product."
         canEdit={canEdit}
       >
-        {error && <Notice tone="error">{error}</Notice>}
+        {displayError && <Notice tone="error">{displayError}</Notice>}
         {status && <Notice tone="success">{status}</Notice>}
 
         <div>
@@ -214,8 +195,8 @@ export default function TanksMetersPage() {
                             setTankForm({
                               name: tank.name,
                               fuelTypeId: tank.fuelTypeId,
-                              capacity: String(tank.capacity),
-                              openingStock: String(tank.openingStock),
+                              capacity: toFinancialInput(tank.capacity, { allowZero: true }),
+                              openingStock: toFinancialInput(tank.openingStock, { allowZero: true }),
                             });
                           }}
                         >
@@ -228,7 +209,7 @@ export default function TanksMetersPage() {
                 {(assets?.tanks ?? []).length === 0 && (
                   <tr>
                     <td className="px-5 py-8 text-gray-500" colSpan={canEdit ? 6 : 5}>
-                    No tanks yet. Add PMG Tank 1, HSD Tank 1, and so on.
+                      No tanks yet. Add PMG Tank 1, HSD Tank 1, and so on.
                     </td>
                   </tr>
                 )}

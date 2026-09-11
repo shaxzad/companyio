@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
-import { authErrorMessage, type User } from '@companyio/auth-contracts';
+import type { User } from '@companyio/auth-contracts';
 import { Badge, PageMeta } from '@companyio/platform-ui';
+import { useUserMutations, useUsers } from '../../hooks';
+import { toErrorMessage } from '../../utils';
 import { ROLE_LABELS } from '../auth/roles';
 import {
   KpiCard,
@@ -15,36 +17,27 @@ import {
 } from '../../ui/page';
 
 export default function UsersPage() {
-  const { client, user } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
+  const { user } = useAuth();
+  const { data: users = [], isLoading, error: usersError } = useUsers();
+  const { updateUser } = useUserMutations();
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
   const [pendingId, setPendingId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const loadUsers = () =>
-    client
-      .listUsers()
-      .then(setUsers)
-      .catch((caught) => setError(authErrorMessage(caught, 'Unable to load users.')))
-      .finally(() => setIsLoading(false));
-
-  useEffect(() => {
-    void loadUsers();
-  }, [client]);
+  const displayError =
+    error || (usersError ? toErrorMessage(usersError, 'Unable to load users.') : '');
 
   const setActive = async (target: User, isActive: boolean) => {
     setPendingId(target.id);
     setError('');
     setStatus('');
     try {
-      await client.updateUser(target.id, { isActive });
+      await updateUser.mutateAsync({ id: target.id, data: { isActive } });
       setStatus(
         isActive ? `${target.name} has been reactivated.` : `${target.name} has been deactivated.`
       );
-      await loadUsers();
     } catch (caught) {
-      setError(authErrorMessage(caught, 'Unable to update the user.'));
+      setError(toErrorMessage(caught, 'Unable to update the user.'));
     } finally {
       setPendingId(null);
     }
@@ -69,7 +62,7 @@ export default function UsersPage() {
           }
         />
 
-        {error && <Notice tone="error">{error}</Notice>}
+        {displayError && <Notice tone="error">{displayError}</Notice>}
         {status && <Notice tone="success">{status}</Notice>}
 
         <section className="grid gap-4 sm:grid-cols-3">
@@ -134,7 +127,10 @@ export default function UsersPage() {
                       <td className="px-5 py-4">
                         <div className="flex justify-end gap-2">
                           {!isOwner && (
-                            <Link to={`/users/${item.id}`} className={`${secondaryActionClass} !px-3 !py-1.5 text-xs`}>
+                            <Link
+                              to={`/users/${item.id}`}
+                              className={`${secondaryActionClass} !px-3 !py-1.5 text-xs`}
+                            >
                               Edit
                             </Link>
                           )}
@@ -164,7 +160,7 @@ export default function UsersPage() {
                     </td>
                   </tr>
                 )}
-                {!isLoading && users.length === 0 && !error && (
+                {!isLoading && users.length === 0 && !displayError && (
                   <tr>
                     <td className="px-5 py-8 text-gray-500" colSpan={5}>
                       No users yet. Add a manager, cashier, or accountant.

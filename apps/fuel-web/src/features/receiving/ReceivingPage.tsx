@@ -1,16 +1,15 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import { Input, Label, PageMeta, Select } from '@companyio/platform-ui';
 import {
-  getFuelTypes,
-  getStationAssets,
-  getStations,
-  type FuelType,
-  type Station,
-  type StationAssets,
-} from '../../api/fuelApi';
-import { createReceiving, listReceipts, type FuelReceipt } from '../../api/receivingApi';
+  useCreateReceiving,
+  useFuelTypes,
+  useReceipts,
+  useSelectedStation,
+  useStationAssets,
+} from '../../hooks';
+import { formatMoney, roundTo, toErrorMessage } from '../../utils';
 import { canEditPath, roleOf } from '../auth/roles';
 import {
   KpiCard,
@@ -24,13 +23,8 @@ import {
   surfaceClass,
 } from '../../ui/page';
 
-const round = (value: number, digits: number) => {
-  const factor = 10 ** digits;
-  return Math.round((value + Number.EPSILON) * factor) / factor;
-};
-
 const money = (value: number) =>
-  `PKR ${value.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  formatMoney(value, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 const emptyForm = () => ({
   supplier: '',
@@ -55,50 +49,18 @@ export default function ReceivingPage() {
   const location = useLocation();
   const role = roleOf(user);
   const canEdit = Boolean(role && canEditPath(role, location.pathname));
-  const [stations, setStations] = useState<Station[]>([]);
-  const [stationId, setStationId] = useState('');
-  const [fuelTypes, setFuelTypes] = useState<FuelType[]>([]);
-  const [assets, setAssets] = useState<StationAssets | null>(null);
-  const [history, setHistory] = useState<FuelReceipt[]>([]);
+  const { stations, stationId, setStationId, error: stationsError } = useSelectedStation();
+  const { data: fuelTypes = [], error: fuelTypesError } = useFuelTypes();
+  const { data: assets = null, error: assetsError } = useStationAssets(stationId);
   const [historyTankId, setHistoryTankId] = useState('');
+  const { data: history = [], error: historyError } = useReceipts(stationId, historyTankId || undefined);
+  const createReceiving = useCreateReceiving();
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    Promise.all([getStations(), getFuelTypes()])
-      .then(([loadedStations, loadedTypes]) => {
-        setStations(loadedStations);
-        setFuelTypes(loadedTypes);
-        if (loadedStations.length === 1) setStationId(loadedStations[0].id);
-      })
-      .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)));
-  }, []);
-
-  useEffect(() => {
-    if (!stationId) {
-      setAssets(null);
-      return;
-    }
-    void getStationAssets(stationId)
-      .then(setAssets)
-      .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)));
-  }, [stationId]);
-
-  const loadHistory = () => {
-    if (!stationId) return;
-    void listReceipts({
-      stationId,
-      ...(historyTankId ? { tankId: historyTankId } : {}),
-    })
-      .then(setHistory)
-      .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)));
-  };
-
-  useEffect(() => {
-    loadHistory();
-  }, [stationId, historyTankId]);
+  const queryError = stationsError || fuelTypesError || assetsError || historyError;
+  const displayError = error || (queryError ? toErrorMessage(queryError) : '');
 
   const tanksForProduct = useMemo(
     () =>
@@ -112,29 +74,30 @@ export default function ReceivingPage() {
   const expected = Number(form.expectedLitres || 0);
   const actual = Number(form.actualLitres || 0);
   const purchaseRate = Number(form.purchaseRate || 0);
-  const delta = form.expectedLitres && form.actualLitres ? round(actual - expected, 3) : 0;
+  const delta = form.expectedLitres && form.actualLitres ? roundTo(actual - expected, 3) : 0;
   const accessLitres = delta > 0 ? delta : 0;
-  const shortageLitres = delta < 0 ? round(Math.abs(delta), 3) : 0;
+  const shortageLitres = delta < 0 ? roundTo(Math.abs(delta), 3) : 0;
   const accessRate =
     form.accessRateMode === 'SELLING' && selectedFuel
       ? Number(selectedFuel.sellingPrice)
       : purchaseRate;
-  const fuelCost = form.actualLitres && form.purchaseRate ? round(actual * purchaseRate, 2) : 0;
+  const fuelCost = form.actualLitres && form.purchaseRate ? roundTo(actual * purchaseRate, 2) : 0;
   const tankerTip = Number(form.tankerTip || 0);
   const otherCost = Number(form.otherReceivingCost || 0);
-  const totalCost = round(fuelCost + tankerTip + otherCost, 2);
+  const totalCost = roundTo(fuelCost + tankerTip + otherCost, 2);
 
-  const update = <K extends keyof ReturnType<typeof emptyForm>>(field: K, value: ReturnType<typeof emptyForm>[K]) =>
-    setForm((current) => ({ ...current, [field]: value }));
+  const update = <K extends keyof ReturnType<typeof emptyForm>>(
+    field: K,
+    value: ReturnType<typeof emptyForm>[K]
+  ) => setForm((current) => ({ ...current, [field]: value }));
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!canEdit || !stationId) return;
     setError('');
     setStatus('');
-    setIsSaving(true);
     try {
-      const saved = await createReceiving({
+      const saved = await createReceiving.mutateAsync({
         stationId,
         supplier: form.supplier,
         fuelTypeId: form.fuelTypeId,
@@ -158,11 +121,8 @@ export default function ReceivingPage() {
         }. Tank stock updated by ${saved.actualLitres} L.`
       );
       setForm(emptyForm());
-      loadHistory();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
-    } finally {
-      setIsSaving(false);
+      setError(toErrorMessage(caught));
     }
   };
 
@@ -206,7 +166,7 @@ export default function ReceivingPage() {
           />
         </section>
 
-        {error && <Notice tone="error">{error}</Notice>}
+        {displayError && <Notice tone="error">{displayError}</Notice>}
         {status && <Notice tone="success">{status}</Notice>}
 
         <form onSubmit={(event) => void submit(event)} className="space-y-6">
@@ -445,8 +405,12 @@ export default function ReceivingPage() {
 
             {canEdit ? (
               <div className="mt-7 flex justify-end">
-                <button type="submit" className={primaryActionClass} disabled={isSaving || !stationId}>
-                  {isSaving ? 'Saving...' : 'Save tanker receipt'}
+                <button
+                  type="submit"
+                  className={primaryActionClass}
+                  disabled={createReceiving.isPending || !stationId}
+                >
+                  {createReceiving.isPending ? 'Saving...' : 'Save tanker receipt'}
                 </button>
               </div>
             ) : (

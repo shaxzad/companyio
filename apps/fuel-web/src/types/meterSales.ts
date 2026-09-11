@@ -1,5 +1,3 @@
-import { fuelRequest } from './fuelApi';
-
 export type MeterSaleRow = {
   nozzleId: string;
   pumpName: string;
@@ -42,14 +40,7 @@ export type MeterSaleSheet = {
   grandTotal: { litres: number; amount: number };
 };
 
-export const getMeterSaleSheet = (stationId: string, businessDayId?: string) =>
-  fuelRequest<MeterSaleSheet>(
-    `/fuel/meter-sales/sheet?stationId=${encodeURIComponent(stationId)}${
-      businessDayId ? `&businessDayId=${encodeURIComponent(businessDayId)}` : ''
-    }`
-  );
-
-export const postMeterSales = (data: {
+export type PostMeterSalesInput = {
   stationId: string;
   businessDayId: string;
   soldAt?: string;
@@ -59,13 +50,14 @@ export const postMeterSales = (data: {
     unitPrice?: number;
     rateOverrideReason?: string;
   }>;
-}) =>
-  fuelRequest<{
-    id: string;
-    saleNumber: string;
-    soldAt: string;
-    enteredAt: string;
-    totalLitres: number;
-    totalAmount: number;
-    productTotals: ProductSaleTotal[];
-  }>('/fuel/meter-sales', { method: 'POST', body: JSON.stringify(data) });
+};
+
+export type PostMeterSalesResult = {
+  id: string;
+  saleNumber: string;
+  soldAt: string;
+  enteredAt: string;
+  totalLitres: number;
+  totalAmount: number;
+  productTotals: ProductSaleTotal[];
+};

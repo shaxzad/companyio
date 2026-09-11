@@ -1,14 +1,10 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import { Badge, Input, Label, PageMeta } from '@companyio/platform-ui';
-import {
-  createDenomination,
-  listDenominations,
-  loadDefaultDenominations,
-  updateDenomination,
-  type CashDenomination,
-} from '../../api/masterApi';
+import { useDenominationMutations, useDenominations } from '../../hooks';
+import type { CashDenomination } from '../../types';
+import { toErrorMessage } from '../../utils';
 import { canEditPath, roleOf } from '../auth/roles';
 import {
   Notice,
@@ -25,20 +21,14 @@ export default function DenominationsPage() {
   const location = useLocation();
   const role = roleOf(user);
   const canEdit = Boolean(role && canEditPath(role, location.pathname));
-  const [rows, setRows] = useState<CashDenomination[]>([]);
+  const { data: rows = [], error: rowsError } = useDenominations();
+  const { createDenomination, loadDefaults, updateDenomination } = useDenominationMutations();
   const [value, setValue] = useState('');
   const [label, setLabel] = useState('');
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
 
-  const load = () =>
-    listDenominations()
-      .then(setRows)
-      .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)));
-
-  useEffect(() => {
-    void load();
-  }, []);
+  const displayError = error || (rowsError ? toErrorMessage(rowsError) : '');
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -46,16 +36,35 @@ export default function DenominationsPage() {
     setError('');
     setStatus('');
     try {
-      await createDenomination({
+      await createDenomination.mutateAsync({
         value: Number(value),
         ...(label ? { label } : {}),
       });
       setValue('');
       setLabel('');
       setStatus('Denomination added.');
-      await load();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+      setError(toErrorMessage(caught));
+    }
+  };
+
+  const toggleActive = async (row: CashDenomination) => {
+    setError('');
+    try {
+      await updateDenomination.mutateAsync({ id: row.id, data: { active: !row.active } });
+    } catch (caught) {
+      setError(toErrorMessage(caught));
+    }
+  };
+
+  const loadPkrDefaults = async () => {
+    setError('');
+    setStatus('');
+    try {
+      await loadDefaults.mutateAsync();
+      setStatus('Loaded PKR defaults.');
+    } catch (caught) {
+      setError(toErrorMessage(caught));
     }
   };
 
@@ -70,7 +79,7 @@ export default function DenominationsPage() {
         description="Editable cash note list used later at closing. PKR defaults are a starting point, not hard-coded forever."
         canEdit={canEdit}
       >
-        {error && <Notice tone="error">{error}</Notice>}
+        {displayError && <Notice tone="error">{displayError}</Notice>}
         {status && <Notice tone="success">{status}</Notice>}
 
         <section className={surfaceClass}>
@@ -85,14 +94,8 @@ export default function DenominationsPage() {
               <button
                 type="button"
                 className={secondaryActionClass}
-                onClick={() =>
-                  void loadDefaultDenominations()
-                    .then(() => {
-                      setStatus('Loaded PKR defaults.');
-                      return load();
-                    })
-                    .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)))
-                }
+                disabled={loadDefaults.isPending}
+                onClick={() => void loadPkrDefaults()}
               >
                 Load PKR defaults
               </button>
@@ -123,9 +126,7 @@ export default function DenominationsPage() {
                         <button
                           type="button"
                           className={`${secondaryActionClass} !px-3 !py-1.5 text-xs`}
-                          onClick={() =>
-                            void updateDenomination(row.id, { active: !row.active }).then(load)
-                          }
+                          onClick={() => void toggleActive(row)}
                         >
                           {row.active ? 'Deactivate' : 'Activate'}
                         </button>
@@ -172,7 +173,11 @@ export default function DenominationsPage() {
                 />
               </div>
               <div className="sm:col-span-2 flex justify-end">
-                <button type="submit" className={primaryActionClass}>
+                <button
+                  type="submit"
+                  className={primaryActionClass}
+                  disabled={createDenomination.isPending}
+                >
                   Add denomination
                 </button>
               </div>

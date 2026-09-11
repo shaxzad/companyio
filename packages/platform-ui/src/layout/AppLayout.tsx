@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { cn } from '../lib/utils';
 
@@ -5,19 +6,28 @@ import { SidebarProvider, useSidebar } from '../context/SidebarContext';
 import AppHeader from './AppHeader';
 import AppSidebar from './AppSidebar';
 import Backdrop from './Backdrop';
-import type { SidebarConfig } from './types';
+import { filterSidebarItems, type SidebarConfig } from './types';
 
-type AppLayoutProps = {
+export type AppLayoutProps = {
   config: SidebarConfig;
 };
 
 const LayoutContent: React.FC<AppLayoutProps> = ({ config }) => {
   const { isExpanded, isMobileOpen } = useSidebar();
 
+  const sidebarConfig = useMemo<SidebarConfig>(
+    () => ({
+      ...config,
+      navItems: filterSidebarItems(config.navItems, config.permissions),
+      othersItems: filterSidebarItems(config.othersItems ?? [], config.permissions),
+    }),
+    [config]
+  );
+
   return (
     <div className="min-h-screen xl:flex">
       <div>
-        <AppSidebar config={config} />
+        <AppSidebar config={sidebarConfig} />
         <Backdrop />
       </div>
       <div
@@ -27,9 +37,9 @@ const LayoutContent: React.FC<AppLayoutProps> = ({ config }) => {
           isMobileOpen && 'ms-0'
         )}
       >
-        <AppHeader />
+        <AppHeader config={config.header} projectDetails={config.projectDetails} />
 
-        <div className="mx-auto max-w-(--breakpoint-2xl) p-5 md:p-8">
+        <div className={cn('mx-auto max-w-(--breakpoint-2xl) p-5 md:p-8', config.contentClassName)}>
           <Outlet />
         </div>
       </div>

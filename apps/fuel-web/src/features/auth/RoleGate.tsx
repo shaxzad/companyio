@@ -12,5 +12,13 @@ export function RoleGate() {
   if (!user || !role) return <Navigate to="/signin" replace />;
   if (!canAccessPath(role, location.pathname)) return <Navigate to="/" replace />;
 
-  return <AppLayout config={sidebarForRole(role)} />;
+  return (
+    <AppLayout
+      config={sidebarForRole(role, {
+        name: user.name,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+      })}
+    />
+  );
 }

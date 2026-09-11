@@ -1,5 +1,3 @@
-import { fuelRequest } from './fuelApi';
-
 export type OpeningMeterRow = {
   nozzleId: string;
   pumpName: string;
@@ -53,19 +51,11 @@ export type OpeningPreview = {
   tanks: OpeningTankRow[];
 };
 
-export const previewOpening = (stationId: string, businessDate: string) =>
-  fuelRequest<OpeningPreview>(
-    `/fuel/days/preview?stationId=${encodeURIComponent(stationId)}&businessDate=${encodeURIComponent(businessDate)}`
-  );
-
-export const listBusinessDays = (stationId: string) =>
-  fuelRequest<BusinessDay[]>(`/fuel/days?stationId=${encodeURIComponent(stationId)}`);
-
-export const openBusinessDay = (data: {
+export type OpenBusinessDayInput = {
   stationId: string;
   businessDate: string;
   bbfCash: number;
   overrideReason?: string;
   meters: Array<{ nozzleId: string; openingReading: number }>;
   tanks: Array<{ tankId: string; openingStock: number }>;
-}) => fuelRequest<BusinessDay>('/fuel/days', { method: 'POST', body: JSON.stringify(data) });
+};

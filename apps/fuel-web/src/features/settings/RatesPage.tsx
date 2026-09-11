@@ -2,13 +2,8 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import { Input, Label, PageMeta, Select } from '@companyio/platform-ui';
-import {
-  createRate,
-  listFuelTypes,
-  listRates,
-  type FuelType,
-  type SellingRate,
-} from '../../api/masterApi';
+import { useFuelTypes, useRateMutations, useRates } from '../../hooks';
+import { toErrorMessage } from '../../utils';
 import { canEditPath, roleOf } from '../auth/roles';
 import { Notice, Surface, SurfaceHeader, primaryActionClass, surfaceClass } from '../../ui/page';
 import { SettingsChrome } from './SettingsChrome';
@@ -18,30 +13,23 @@ export default function RatesPage() {
   const location = useLocation();
   const role = roleOf(user);
   const canEdit = Boolean(role && canEditPath(role, location.pathname));
-  const [products, setProducts] = useState<FuelType[]>([]);
-  const [rates, setRates] = useState<SellingRate[]>([]);
+  const { data: products = [], error: productsError } = useFuelTypes();
   const [fuelTypeId, setFuelTypeId] = useState('');
+  const { data: rates = [], error: ratesError } = useRates(fuelTypeId || undefined);
+  const { createRate } = useRateMutations();
   const [sellingPrice, setSellingPrice] = useState('');
   const [effectiveFrom, setEffectiveFrom] = useState('');
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
 
-  const load = (productId?: string) =>
-    Promise.all([listFuelTypes(), listRates(productId || undefined)])
-      .then(([loadedProducts, loadedRates]) => {
-        setProducts(loadedProducts);
-        setRates(loadedRates);
-        if (!productId && loadedProducts[0] && !fuelTypeId) setFuelTypeId(loadedProducts[0].id);
-      })
-      .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)));
-
   useEffect(() => {
-    void load();
-  }, []);
+    if (!fuelTypeId && products[0]) setFuelTypeId(products[0].id);
+  }, [products, fuelTypeId]);
 
-  useEffect(() => {
-    if (fuelTypeId) void listRates(fuelTypeId).then(setRates).catch(() => undefined);
-  }, [fuelTypeId]);
+  const displayError =
+    error ||
+    (productsError ? toErrorMessage(productsError) : '') ||
+    (ratesError ? toErrorMessage(ratesError) : '');
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -49,7 +37,7 @@ export default function RatesPage() {
     setError('');
     setStatus('');
     try {
-      await createRate({
+      await createRate.mutateAsync({
         fuelTypeId,
         sellingPrice: Number(sellingPrice),
         ...(effectiveFrom ? { effectiveFrom: new Date(effectiveFrom).toISOString() } : {}),
@@ -57,9 +45,8 @@ export default function RatesPage() {
       setSellingPrice('');
       setEffectiveFrom('');
       setStatus('Selling rate posted. Current product price was updated.');
-      await load(fuelTypeId);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+      setError(toErrorMessage(caught));
     }
   };
 
@@ -76,7 +63,7 @@ export default function RatesPage() {
         description="Post a new rate when the pump price changes. The latest rate becomes the current selling price."
         canEdit={canEdit}
       >
-        {error && <Notice tone="error">{error}</Notice>}
+        {displayError && <Notice tone="error">{displayError}</Notice>}
         {status && <Notice tone="success">{status}</Notice>}
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -168,7 +155,11 @@ export default function RatesPage() {
                 />
               </div>
               <div className="sm:col-span-2 flex justify-end">
-                <button type="submit" className={primaryActionClass} disabled={!fuelTypeId}>
+                <button
+                  type="submit"
+                  className={primaryActionClass}
+                  disabled={!fuelTypeId || createRate.isPending}
+                >
                   Post selling rate
                 </button>
               </div>

@@ -2,17 +2,9 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import { Input, Label, PageMeta, Select } from '@companyio/platform-ui';
-import {
-  createFuelRecord,
-  getFuelTypes,
-  getOrganizations,
-  getStations,
-  getStationAssets,
-  type FuelType,
-  type Organization,
-  type Station,
-  type StationAssets,
-} from '../api/fuelApi';
+import { createFuelRecord } from '../services/fuel';
+import { useFuelTypes, useOrganizations, useStationAssets, useStations } from '../hooks';
+import { toErrorMessage } from '../utils';
 import { canEditPath, roleOf } from '../features/auth/roles';
 import {
   KpiCard,
@@ -34,6 +26,7 @@ type Field = {
   placeholder?: string;
   disabled?: boolean;
 };
+
 type Props = {
   title: string;
   description: string;
@@ -56,36 +49,32 @@ export default function FuelRecordPage({
   const role = roleOf(user);
   const canEdit = Boolean(role && canEditPath(role, location.pathname));
   const [values, setValues] = useState<Record<string, string>>(defaults);
-  const [stations, setStations] = useState<Station[]>([]);
-  const [fuelTypes, setFuelTypes] = useState<FuelType[]>([]);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [assets, setAssets] = useState<StationAssets | null>(null);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    Promise.all([getStations(), getFuelTypes(), getOrganizations()])
-      .then(([loadedStations, loadedFuelTypes, loadedOrganizations]) => {
-        setStations(loadedStations);
-        setFuelTypes(loadedFuelTypes);
-        setOrganizations(loadedOrganizations);
-        if (loadedStations.length === 1)
-          setValues((current) =>
-            current.stationId ? current : { ...current, stationId: loadedStations[0].id }
-          );
-      })
-      .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)));
-  }, []);
+  const stationsQuery = useStations();
+  const fuelTypesQuery = useFuelTypes();
+  const organizationsQuery = useOrganizations();
+  const assetsQuery = useStationAssets(values.stationId);
+
+  const stations = stationsQuery.data ?? [];
+  const fuelTypes = fuelTypesQuery.data ?? [];
+  const organizations = organizationsQuery.data ?? [];
+  const assets = assetsQuery.data ?? null;
 
   useEffect(() => {
-    if (!values.stationId) {
-      setAssets(null);
-      return;
+    const loadError =
+      stationsQuery.error ?? fuelTypesQuery.error ?? organizationsQuery.error ?? assetsQuery.error;
+    if (loadError) setError(toErrorMessage(loadError));
+  }, [stationsQuery.error, fuelTypesQuery.error, organizationsQuery.error, assetsQuery.error]);
+
+  useEffect(() => {
+    if (stations.length === 1) {
+      setValues((current) =>
+        current.stationId ? current : { ...current, stationId: stations[0].id }
+      );
     }
-    void getStationAssets(values.stationId)
-      .then(setAssets)
-      .catch(() => setAssets(null));
-  }, [values.stationId]);
+  }, [stations]);
 
   const selectedFuel = useMemo(
     () => fuelTypes.find((fuel) => fuel.id === values.fuelTypeId),
@@ -153,9 +142,7 @@ export default function FuelRecordPage({
           value: organization.id,
           label: organization.name,
         })),
-        placeholder: organizations.length
-          ? 'Select organization'
-          : 'No organizations yet',
+        placeholder: organizations.length ? 'Select organization' : 'No organizations yet',
       };
     if (field.name === 'vehicleId')
       return {
@@ -194,6 +181,7 @@ export default function FuelRecordPage({
       if (name === 'organizationId') next.vehicleId = '';
       return next;
     });
+
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!canEdit) return;
@@ -214,7 +202,7 @@ export default function FuelRecordPage({
       await createFuelRecord(resolvedEndpoint, payload);
       setStatus(`${title} saved successfully.`);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+      setError(toErrorMessage(caught));
     }
   };
 
@@ -229,7 +217,12 @@ export default function FuelRecordPage({
         />
 
         <section className="grid gap-4 sm:grid-cols-3">
-          <KpiCard label="Station" value={stations[0]?.name ?? '--'} detail="Active pump" tone="text-emerald-600" />
+          <KpiCard
+            label="Station"
+            value={stations[0]?.name ?? '--'}
+            detail="Active pump"
+            tone="text-emerald-600"
+          />
           <KpiCard
             label="Fuel types"
             value={String(fuelTypes.length || '--')}
@@ -285,11 +278,7 @@ export default function FuelRecordPage({
                       id={field.name}
                       name={field.name}
                       type={field.type ?? 'text'}
-                      placeholder={
-                        field.type === 'number'
-                          ? `Enter ${field.label.toLowerCase()}`
-                          : `Enter ${field.label.toLowerCase()}`
-                      }
+                      placeholder={`Enter ${field.label.toLowerCase()}`}
                       value={values[field.name] ?? ''}
                       onChange={(event) => update(field.name, event.target.value)}
                       required={field.required}

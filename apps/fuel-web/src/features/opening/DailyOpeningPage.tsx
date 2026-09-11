@@ -2,12 +2,12 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import { Input, Label, PageMeta, Select } from '@companyio/platform-ui';
-import { getStations, type Station } from '../../api/fuelApi';
 import {
-  openBusinessDay,
-  previewOpening,
-  type OpeningPreview,
-} from '../../api/openingApi';
+  useOpenBusinessDay,
+  useOpeningPreview,
+  useSelectedStation,
+} from '../../hooks';
+import { emptyRecord, requireFinancialInput, toErrorMessage, toFinancialInput, todayYmd } from '../../utils';
 import { canEditPath, roleOf } from '../auth/roles';
 import {
   KpiCard,
@@ -21,77 +21,71 @@ import {
   surfaceClass,
 } from '../../ui/page';
 
-const todayYmd = () =>
-  new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(new Date());
-
-const emptyMap = () => ({}) as Record<string, string>;
-
 export default function DailyOpeningPage() {
   const { user } = useAuth();
   const location = useLocation();
   const role = roleOf(user);
   const canEdit = Boolean(role && canEditPath(role, location.pathname));
   const isOwner = role === 'owner';
-  const [stations, setStations] = useState<Station[]>([]);
-  const [stationId, setStationId] = useState('');
+  const { stations, stationId, setStationId, error: stationsError } = useSelectedStation();
   const [businessDate, setBusinessDate] = useState(todayYmd);
-  const [preview, setPreview] = useState<OpeningPreview | null>(null);
-  const [meters, setMeters] = useState<Record<string, string>>(emptyMap);
-  const [tanks, setTanks] = useState<Record<string, string>>(emptyMap);
+  const {
+    data: preview = null,
+    isLoading,
+    error: previewError,
+  } = useOpeningPreview(stationId, businessDate);
+  const openBusinessDay = useOpenBusinessDay();
+  const [meters, setMeters] = useState<Record<string, string>>(emptyRecord);
+  const [tanks, setTanks] = useState<Record<string, string>>(emptyRecord);
   const [bbfCash, setBbfCash] = useState('');
   const [overrideReason, setOverrideReason] = useState('');
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    getStations()
-      .then((loaded) => {
-        setStations(loaded);
-        if (loaded.length === 1) setStationId(loaded[0].id);
-      })
-      .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)));
-  }, []);
-
-  useEffect(() => {
-    if (!stationId || !businessDate) {
-      setPreview(null);
+    if (!preview) return;
+    if (preview.existing) {
+      // Persisted values may legitimately be zero — show them as entered.
+      setBbfCash(toFinancialInput(preview.existing.bbfCash, { allowZero: true }));
+      setMeters(
+        Object.fromEntries(
+          preview.existing.meters.map((row) => [
+            row.nozzleId,
+            toFinancialInput(row.openingReading, { allowZero: true }),
+          ])
+        )
+      );
+      setTanks(
+        Object.fromEntries(
+          preview.existing.tanks.map((row) => [
+            row.tankId,
+            toFinancialInput(row.openingStock, { allowZero: true }),
+          ])
+        )
+      );
       return;
     }
-    setIsLoading(true);
-    setError('');
-    previewOpening(stationId, businessDate)
-      .then((loaded) => {
-        setPreview(loaded);
-        if (loaded.existing) {
-          setBbfCash(String(loaded.existing.bbfCash));
-          setMeters(
-            Object.fromEntries(
-              loaded.existing.meters.map((row) => [row.nozzleId, String(row.openingReading)])
-            )
-          );
-          setTanks(
-            Object.fromEntries(
-              loaded.existing.tanks.map((row) => [row.tankId, String(row.openingStock)])
-            )
-          );
-          return;
-        }
-        setBbfCash(loaded.previousDay ? String(loaded.bbfCashSuggested) : '');
-        setOverrideReason('');
-        setMeters(
-          Object.fromEntries(
-            loaded.meters.map((row) => [row.nozzleId, String(row.suggestedOpening)])
-          )
-        );
-        setTanks(
-          Object.fromEntries(loaded.tanks.map((row) => [row.tankId, String(row.suggestedOpening)]))
-        );
-      })
-      .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)))
-      .finally(() => setIsLoading(false));
-  }, [stationId, businessDate]);
+    // Suggestions: never prefill bare 0 — empty means “not confirmed yet”.
+    setBbfCash(
+      preview.previousDay
+        ? toFinancialInput(preview.bbfCashSuggested, { allowZero: true })
+        : ''
+    );
+    setOverrideReason('');
+    setMeters(
+      Object.fromEntries(
+        preview.meters.map((row) => [row.nozzleId, toFinancialInput(row.suggestedOpening)])
+      )
+    );
+    setTanks(
+      Object.fromEntries(
+        preview.tanks.map((row) => [row.tankId, toFinancialInput(row.suggestedOpening)])
+      )
+    );
+  }, [preview]);
+
+  const queryError = stationsError || previewError;
+  const displayError = error || (queryError ? toErrorMessage(queryError) : '');
 
   const metersByProduct = useMemo(() => {
     const rows = preview?.existing?.meters ?? preview?.meters ?? [];
@@ -115,29 +109,34 @@ export default function DailyOpeningPage() {
     if (!preview || !canSubmit) return;
     setError('');
     setStatus('');
-    setIsSaving(true);
     try {
-      await openBusinessDay({
+      const parsedBbf = requireFinancialInput(bbfCash, 'BBF Cash');
+      const parsedMeters = preview.meters.map((row) => ({
+        nozzleId: row.nozzleId,
+        openingReading: requireFinancialInput(
+          meters[row.nozzleId] ?? '',
+          `Opening reading for ${row.pumpName} nozzle ${row.nozzleNumber}`
+        ),
+      }));
+      const parsedTanks = preview.tanks.map((row) => ({
+        tankId: row.tankId,
+        openingStock: requireFinancialInput(
+          tanks[row.tankId] ?? '',
+          `Opening stock for ${row.tankName}`
+        ),
+      }));
+
+      await openBusinessDay.mutateAsync({
         stationId,
         businessDate,
-        bbfCash: Number(bbfCash || 0),
+        bbfCash: parsedBbf,
         ...(preview.requiresOwnerOverride ? { overrideReason: overrideReason.trim() } : {}),
-        meters: preview.meters.map((row) => ({
-          nozzleId: row.nozzleId,
-          openingReading: Number(meters[row.nozzleId] || 0),
-        })),
-        tanks: preview.tanks.map((row) => ({
-          tankId: row.tankId,
-          openingStock: Number(tanks[row.tankId] || 0),
-        })),
+        meters: parsedMeters,
+        tanks: parsedTanks,
       });
       setStatus(`Business date ${businessDate} is open. BBF Cash is stored for closing later.`);
-      const refreshed = await previewOpening(stationId, businessDate);
-      setPreview(refreshed);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
-    } finally {
-      setIsSaving(false);
+      setError(toErrorMessage(caught));
     }
   };
 
@@ -192,7 +191,7 @@ export default function DailyOpeningPage() {
           />
         </section>
 
-        {error && <Notice tone="error">{error}</Notice>}
+        {displayError && <Notice tone="error">{displayError}</Notice>}
         {status && <Notice tone="success">{status}</Notice>}
         {preview?.blockedReason && !alreadyOpened && (
           <Notice tone={preview.requiresOwnerOverride && isOwner ? 'warning' : 'error'}>
@@ -374,8 +373,12 @@ export default function DailyOpeningPage() {
 
           {canEdit && !alreadyOpened && (
             <div className="flex justify-end">
-              <button type="submit" className={primaryActionClass} disabled={!canSubmit || isSaving}>
-                {isSaving ? 'Opening...' : 'Open business date'}
+              <button
+                type="submit"
+                className={primaryActionClass}
+                disabled={!canSubmit || openBusinessDay.isPending}
+              >
+                {openBusinessDay.isPending ? 'Opening...' : 'Open business date'}
               </button>
             </div>
           )}

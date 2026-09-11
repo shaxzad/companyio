@@ -1,4 +1,4 @@
-import { fuelRequest } from './fuelApi';
+export type AccessRateMode = 'PURCHASE' | 'SELLING';
 
 export type FuelReceipt = {
   id: string;
@@ -16,7 +16,7 @@ export type FuelReceipt = {
   accessLitres: number;
   shortageLitres: number;
   purchaseRate: number;
-  accessRateMode: 'PURCHASE' | 'SELLING';
+  accessRateMode: AccessRateMode;
   accessRate: number;
   fuelCost: number;
   tankerTip: number;
@@ -30,15 +30,7 @@ export type FuelReceipt = {
   tankName: string | null;
 };
 
-export const listReceipts = (params?: { stationId?: string; tankId?: string }) => {
-  const query = new URLSearchParams();
-  if (params?.stationId) query.set('stationId', params.stationId);
-  if (params?.tankId) query.set('tankId', params.tankId);
-  const suffix = query.toString() ? `?${query.toString()}` : '';
-  return fuelRequest<FuelReceipt[]>(`/fuel/receipts${suffix}`);
-};
-
-export const createReceiving = (data: {
+export type CreateReceivingInput = {
   stationId: string;
   businessDayId?: string;
   supplier: string;
@@ -51,9 +43,14 @@ export const createReceiving = (data: {
   totalDip?: number;
   receivedDip?: number;
   purchaseRate: number;
-  accessRateMode?: 'PURCHASE' | 'SELLING';
+  accessRateMode?: AccessRateMode;
   tankerTip?: number;
   otherReceivingCost?: number;
   receivedAt?: string;
   notes?: string;
-}) => fuelRequest<FuelReceipt>('/fuel/receiving', { method: 'POST', body: JSON.stringify(data) });
+};
+
+export type ListReceiptsParams = {
+  stationId?: string;
+  tankId?: string;
+};

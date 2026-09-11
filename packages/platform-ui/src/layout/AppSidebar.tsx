@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils';
 
@@ -14,6 +14,11 @@ type AppSidebarProps = {
 const AppSidebar: React.FC<AppSidebarProps> = ({ config }) => {
   const { isExpanded, isMobileOpen, toggleSidebar } = useSidebar();
   const location = useLocation();
+
+  const navItems = config.navItems;
+  const othersItems = useMemo(() => config.othersItems ?? [], [config.othersItems]);
+  const mainLabel = config.mainLabel ?? 'Menu';
+  const othersLabel = config.othersLabel ?? 'Others';
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: 'main' | 'others';
@@ -35,8 +40,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ config }) => {
       type: 'main' | 'others';
       items: SidebarNavItem[];
     }[] = [
-      { type: 'main', items: config.navItems },
-      { type: 'others', items: config.othersItems },
+      { type: 'main', items: navItems },
+      { type: 'others', items: othersItems },
     ];
 
     for (const { type, items } of menuGroups) {
@@ -57,7 +62,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ config }) => {
     if (!submenuMatched) {
       setOpenSubmenu(null);
     }
-  }, [config.navItems, config.othersItems, isActive]);
+  }, [navItems, othersItems, isActive]);
 
   useEffect(() => {
     if (openSubmenu === null) {
@@ -92,9 +97,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ config }) => {
       <ul className="flex flex-col gap-1">
         {items.map((nav, index) => {
           const isSubmenuOpen = openSubmenu?.type === menuType && openSubmenu?.index === index;
+          const itemKey = nav.key ?? `${menuType}-${nav.name}-${nav.path ?? index}`;
 
           return (
-            <li key={nav.name}>
+            <li key={itemKey}>
               {nav.subItems ? (
                 <>
                   <button
@@ -148,9 +154,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ config }) => {
                     <ul className="ms-4 mt-1 space-y-0.5 border-s border-gray-100 ps-3 dark:border-gray-800">
                       {nav.subItems.map((subItem) => {
                         const active = isActive(subItem.path);
+                        const subKey = subItem.key ?? `${subItem.path}-${subItem.name}`;
 
                         return (
-                          <li key={subItem.name}>
+                          <li key={subKey}>
                             <Link
                               to={subItem.path}
                               className={cn(
@@ -322,13 +329,13 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ config }) => {
                   !showExpandedContent && 'lg:flex lg:justify-center lg:px-0'
                 )}
               >
-                {showExpandedContent ? 'Menu' : <HorizontaLDots className="size-5" />}
+                {showExpandedContent ? mainLabel : <HorizontaLDots className="size-5" />}
               </h2>
 
-              {renderMenuItems(config.navItems, 'main')}
+              {renderMenuItems(navItems, 'main')}
             </div>
 
-            {config.othersItems.length > 0 && (
+            {othersItems.length > 0 && (
               <div>
                 <h2
                   className={cn(
@@ -336,10 +343,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ config }) => {
                     !showExpandedContent && 'lg:flex lg:justify-center lg:px-0'
                   )}
                 >
-                  {showExpandedContent ? 'Others' : <HorizontaLDots className="size-5" />}
+                  {showExpandedContent ? othersLabel : <HorizontaLDots className="size-5" />}
                 </h2>
 
-                {renderMenuItems(config.othersItems, 'others')}
+                {renderMenuItems(othersItems, 'others')}
               </div>
             )}
           </div>

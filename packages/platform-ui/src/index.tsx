@@ -118,7 +118,8 @@ export { default as UserInfoCard } from './components/UserProfile/UserInfoCard';
 export { default as UserMetaCard } from './components/UserProfile/UserMetaCard';
 // Sidebar
 export { SidebarProvider } from './context/SidebarContext';
-export { ThemeProvider } from './context/ThemeContext';
+export { ThemeProvider, useTheme } from './context/ThemeContext';
+export type { Theme, ThemeMode } from './context/ThemeContext';
 export { AppWrapper } from './components/common/PageMeta';
 
 // Hooks
@@ -129,6 +130,7 @@ export { default as LayoutContent } from './layout/AppLayout';
 export { default as AppLayout } from './layout/AppLayout';
 export { default as AppSidebar } from './layout/AppSidebar';
 export { default as Backdrop } from './layout/Backdrop';
+export { ThemeModeSwitcher } from './components/header/ThemeModeSwitcher';
 // Calender
 export { default as FullCalendar } from '@fullcalendar/react';
 export { default as dayGridPlugin } from '@fullcalendar/daygrid';
@@ -193,4 +195,47 @@ export {
 
 export type { ProductTile } from './ProductGrid';
 
-export type { SidebarConfig, SidebarNavItem, SidebarSubItem } from './layout/types';
+export type {
+  HeaderConfig,
+  HeaderIconAction,
+  HeaderMenuItem,
+  HeaderMenuLink,
+  HeaderNotification,
+  HeaderSearchConfig,
+  HeaderStatusBadge,
+  HeaderUser,
+  LayoutConfig,
+  LayoutMenuPosition,
+  SidebarConfig,
+  SidebarNavItem,
+  SidebarProjectDetails,
+  SidebarSubItem,
+} from './layout/types';
+export { filterSidebarItems, hasMenuPermission } from './layout/types';
+
+export type {
+  ApplyRouteOptions,
+  AppRouteAuth,
+  AppRouteLazyComponent,
+  AppRouteModule,
+  BuildSidebarFromRoutesOptions,
+  BuildRouterRoutesOptions,
+  FilterRoutesOptions,
+  MenuPosition,
+  PersonRouteOptions,
+  ResolvedAppRoute,
+} from './routing';
+export {
+  MenuPositions,
+  DEFAULT_MAIN_POSITIONS,
+  DEFAULT_OTHERS_POSITIONS,
+  buildRouterRoutes,
+  buildSidebarFromRoutes,
+  filterRoutes,
+  flattenRoutes,
+  listRoutableModules,
+  resolveRouteVariant,
+  routeMatchesVariant,
+  routePermissions,
+  toResolvedRoute,
+} from './routing';
