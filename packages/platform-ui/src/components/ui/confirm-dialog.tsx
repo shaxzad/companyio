@@ -1,4 +1,4 @@
-import { Modal } from '@companyio/platform-ui';
+import { Modal } from './modal/index';
 
 export type ConfirmDialogProps = {
   open: boolean;
@@ -9,6 +9,7 @@ export type ConfirmDialogProps = {
   /** Destructive actions use error styling on the confirm button. */
   tone?: 'danger' | 'default';
   pending?: boolean;
+  pendingLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -32,8 +33,8 @@ function Spinner({ className = '' }: { className?: string }) {
 }
 
 /**
- * App confirm popup — use instead of `window.confirm`.
- * Pair with toasts for success/error after the dialog closes.
+ * Shared confirm popup — use instead of `window.confirm`.
+ * Pair with app toasts for success/error after the dialog closes.
  */
 export function ConfirmDialog({
   open,
@@ -43,10 +44,12 @@ export function ConfirmDialog({
   cancelLabel = 'Cancel',
   tone = 'default',
   pending = false,
+  pendingLabel,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
   const isDanger = tone === 'danger';
+  const busyLabel = pendingLabel ?? (isDanger ? 'Deleting…' : 'Please wait…');
 
   return (
     <Modal
@@ -123,7 +126,7 @@ export function ConfirmDialog({
             {pending ? (
               <>
                 <Spinner className="text-white" />
-                <span>{isDanger ? 'Deleting…' : 'Please wait…'}</span>
+                <span>{busyLabel}</span>
               </>
             ) : (
               confirmLabel

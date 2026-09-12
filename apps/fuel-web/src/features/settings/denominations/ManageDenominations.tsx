@@ -1,8 +1,13 @@
-import { FormEvent, useState } from 'react';
-import { Badge } from '@companyio/platform-ui';
-import { ConfirmDialog } from '../../../components/ConfirmDialog';
-import { FormField } from '../../../components/FormField';
-import { useConfirmDialog, useFormSubmission } from '../../../hooks';
+import { FormEvent, useMemo, useState } from 'react';
+import {
+  Badge,
+  ConfirmDialog,
+  DataTable,
+  type DataTableColumn,
+  FormField,
+  useConfirmDialog,
+} from '@companyio/platform-ui';
+import { useFormSubmission } from '../../../hooks';
 import type { CashDenomination } from '../../../types';
 import {
   denominationDisplayLabel,
@@ -49,6 +54,79 @@ export function ManageDenominations({
   const { fieldError, clearFieldError, clearErrors, submit, runAction, submitting } =
     useFormSubmission();
   const confirmDialog = useConfirmDialog();
+
+  const denominationColumns = useMemo<DataTableColumn<CashDenomination>[]>(() => {
+    const columns: DataTableColumn<CashDenomination>[] = [
+      {
+        id: 'denomination',
+        header: 'Denomination',
+        className: 'font-medium text-gray-900 dark:text-white',
+        cell: (row) => denominationDisplayLabel(row),
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        cell: (row) => (
+          <Badge variant={row.active ? 'success' : 'error'}>
+            {row.active ? 'Active' : 'Inactive'}
+          </Badge>
+        ),
+      },
+    ];
+
+    if (canEdit) {
+      columns.push({
+        id: 'actions',
+        header: 'Actions',
+        className: 'text-end',
+        headerClassName: 'text-end',
+        cell: (row) => (
+          <div className="inline-flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              className={`${secondaryActionClass} px-3! py-1.5! text-xs`}
+              onClick={() => {
+                void runAction(() => onToggleActive(row), {
+                  successMessage: row.active
+                    ? 'Denomination deactivated.'
+                    : 'Denomination activated.',
+                });
+              }}
+            >
+              {row.active ? 'Deactivate' : 'Activate'}
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-lg border border-error-200 bg-white px-3 py-1.5 text-xs font-semibold text-error-700 hover:bg-error-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-error-800 dark:bg-gray-900 dark:text-error-400 dark:hover:bg-error-950/40"
+              disabled={deletePending || confirmDialog.pending}
+              onClick={() => {
+                const name = denominationDisplayLabel(row);
+                confirmDialog.askConfirm({
+                  title: 'Delete denomination?',
+                  description: `Delete ${name}? This removes it from cash counting permanently.`,
+                  confirmLabel: 'Delete',
+                  tone: 'danger',
+                  onConfirm: async () => {
+                    try {
+                      await onDelete(row);
+                      toast.success('Denomination deleted.');
+                    } catch (caught) {
+                      toast.error(toErrorMessage(caught));
+                      throw caught;
+                    }
+                  },
+                });
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        ),
+      });
+    }
+
+    return columns;
+  }, [canEdit, confirmDialog, deletePending, onDelete, onToggleActive, runAction]);
 
   const onValueChange = (next: string) => {
     setValue(next);
@@ -184,81 +262,13 @@ export function ManageDenominations({
             </form>
           )}
 
-          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
-            <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-800 dark:bg-gray-950/50">
-                <tr>
-                  <th className="px-4 py-3">Denomination</th>
-                  <th className="px-4 py-3">Status</th>
-                  {canEdit && <th className="px-4 py-3 text-end">Actions</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {rows.map((row) => (
-                  <tr key={row.id}>
-                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                      {denominationDisplayLabel(row)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={row.active ? 'success' : 'error'}>
-                        {row.active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </td>
-                    {canEdit && (
-                      <td className="px-4 py-3 text-end">
-                        <div className="inline-flex flex-wrap items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            className={`${secondaryActionClass} px-3! py-1.5! text-xs`}
-                            onClick={() => {
-                              void runAction(() => onToggleActive(row), {
-                                successMessage: row.active
-                                  ? 'Denomination deactivated.'
-                                  : 'Denomination activated.',
-                              });
-                            }}
-                          >
-                            {row.active ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button
-                            type="button"
-                            className="inline-flex items-center justify-center rounded-lg border border-error-200 bg-white px-3 py-1.5 text-xs font-semibold text-error-700 hover:bg-error-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-error-800 dark:bg-gray-900 dark:text-error-400 dark:hover:bg-error-950/40"
-                            disabled={deletePending || confirmDialog.pending}
-                            onClick={() => {
-                              const name = denominationDisplayLabel(row);
-                              confirmDialog.askConfirm({
-                                title: 'Delete denomination?',
-                                description: `Delete ${name}? This removes it from cash counting permanently.`,
-                                confirmLabel: 'Delete',
-                                tone: 'danger',
-                                onConfirm: async () => {
-                                  try {
-                                    await onDelete(row);
-                                    toast.success('Denomination deleted.');
-                                  } catch (caught) {
-                                    toast.error(toErrorMessage(caught));
-                                    throw caught;
-                                  }
-                                },
-                              });
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-                {rows.length === 0 && (
-                  <tr>
-                    <td className="px-4 py-6 text-gray-500" colSpan={3}>
-                      No denominations configured yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div className="rounded-xl border border-gray-200 dark:border-gray-800">
+            <DataTable
+              columns={denominationColumns}
+              rows={rows}
+              getRowKey={(row) => row.id}
+              emptyMessage="No denominations configured yet."
+            />
           </div>
         </div>
       )}

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import type { User } from '@companyio/auth-contracts';
-import { Badge, PageMeta } from '@companyio/platform-ui';
+import { Badge, DataTable, type DataTableColumn, PageMeta } from '@companyio/platform-ui';
 import { useUserMutations, useUsers } from '../../hooks';
 import { toErrorMessage } from '../../utils';
 import { ROLE_LABELS } from '../auth/roles';
@@ -44,6 +44,78 @@ export default function UsersPage() {
   };
 
   const activeCount = users.filter((item) => item.isActive).length;
+
+  const userColumns = useMemo<DataTableColumn<User>[]>(
+    () => [
+      {
+        id: 'name',
+        header: 'Name',
+        className: 'font-medium text-gray-800 dark:text-gray-200',
+        cell: (item) => item.name,
+      },
+      {
+        id: 'email',
+        header: 'Email',
+        className: 'text-gray-800 dark:text-gray-200',
+        cell: (item) => item.email,
+      },
+      {
+        id: 'role',
+        header: 'Role',
+        cell: (item) => (
+          <span className="rounded-lg bg-brand-100 px-2 py-1 text-[11px] font-semibold text-brand-700">
+            {ROLE_LABELS[item.role]}
+          </span>
+        ),
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        cell: (item) => (
+          <Badge variant={item.isActive ? 'success' : 'error'}>
+            {item.isActive ? 'Active' : 'Deactivated'}
+          </Badge>
+        ),
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        className: 'text-end',
+        headerClassName: 'text-end',
+        cell: (item) => {
+          const isSelf = item.id === user?.id;
+          const isOwner = item.role === 'owner';
+          return (
+            <div className="flex justify-end gap-2">
+              {!isOwner && (
+                <Link
+                  to={`/users/${item.id}`}
+                  className={`${secondaryActionClass} !px-3 !py-1.5 text-xs`}
+                >
+                  Edit
+                </Link>
+              )}
+              {!isOwner && !isSelf && (
+                <button
+                  type="button"
+                  className={
+                    item.isActive
+                      ? 'inline-flex items-center justify-center rounded-lg bg-error-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-error-400 disabled:opacity-50'
+                      : `${secondaryActionClass} !px-3 !py-1.5 text-xs`
+                  }
+                  disabled={pendingId === item.id}
+                  onClick={() => void setActive(item, !item.isActive)}
+                >
+                  {item.isActive ? 'Deactivate' : 'Reactivate'}
+                </button>
+              )}
+            </div>
+          );
+        },
+      },
+    ],
+    [pendingId, user?.id]
+  );
 
   return (
     <>
@@ -95,81 +167,16 @@ export default function UsersPage() {
               </p>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
-                <tr>
-                  <th className="px-5 py-3">Name</th>
-                  <th className="px-5 py-3">Email</th>
-                  <th className="px-5 py-3">Role</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3 text-end">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {users.map((item) => {
-                  const isSelf = item.id === user?.id;
-                  const isOwner = item.role === 'owner';
-                  return (
-                    <tr key={item.id} className="text-gray-800 dark:text-gray-200">
-                      <td className="px-5 py-4 font-medium">{item.name}</td>
-                      <td className="px-5 py-4">{item.email}</td>
-                      <td className="px-5 py-4">
-                        <span className="rounded-lg bg-brand-100 px-2 py-1 text-[11px] font-semibold text-brand-700">
-                          {ROLE_LABELS[item.role]}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <Badge variant={item.isActive ? 'success' : 'error'}>
-                          {item.isActive ? 'Active' : 'Deactivated'}
-                        </Badge>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex justify-end gap-2">
-                          {!isOwner && (
-                            <Link
-                              to={`/users/${item.id}`}
-                              className={`${secondaryActionClass} !px-3 !py-1.5 text-xs`}
-                            >
-                              Edit
-                            </Link>
-                          )}
-                          {!isOwner && !isSelf && (
-                            <button
-                              type="button"
-                              className={
-                                item.isActive
-                                  ? 'inline-flex items-center justify-center rounded-lg bg-error-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-error-400 disabled:opacity-50'
-                                  : `${secondaryActionClass} !px-3 !py-1.5 text-xs`
-                              }
-                              disabled={pendingId === item.id}
-                              onClick={() => void setActive(item, !item.isActive)}
-                            >
-                              {item.isActive ? 'Deactivate' : 'Reactivate'}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {isLoading && (
-                  <tr>
-                    <td className="px-5 py-8 text-gray-500" colSpan={5}>
-                      Loading users...
-                    </td>
-                  </tr>
-                )}
-                {!isLoading && users.length === 0 && !displayError && (
-                  <tr>
-                    <td className="px-5 py-8 text-gray-500" colSpan={5}>
-                      No users yet. Add a manager, cashier, or accountant.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          {isLoading ? (
+            <p className="px-5 py-8 text-sm text-gray-500">Loading users...</p>
+          ) : (
+            <DataTable
+              columns={userColumns}
+              rows={users}
+              getRowKey={(item) => item.id}
+              emptyMessage="No users yet. Add a manager, cashier, or accountant."
+            />
+          )}
         </section>
       </PageShell>
     </>

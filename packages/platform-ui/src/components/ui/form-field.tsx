@@ -1,9 +1,10 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { Input, Label } from '@companyio/platform-ui';
+import { Input } from './input';
+import { Label } from './label';
 
 type InputProps = ComponentProps<typeof Input>;
 
-type FormFieldProps = {
+export type FormFieldProps = {
   id: string;
   label: ReactNode;
   error?: string;
@@ -12,7 +13,8 @@ type FormFieldProps = {
 } & Omit<InputProps, 'id' | 'error' | 'hint'>;
 
 /**
- * Label + Input with inline field error (platform-ui Input `error` + `hint`).
+ * Label + Input with inline field error (Input `error` + `hint`).
+ * Shared across product apps — keep forms consistent.
  */
 export function FormField({
   id,

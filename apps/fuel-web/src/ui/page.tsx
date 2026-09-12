@@ -9,9 +9,42 @@ export const pageSubClass = 'mt-1 text-sm text-gray-500 dark:text-gray-400';
 export const surfaceClass =
   'rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900';
 export const primaryActionClass =
-  'inline-flex items-center justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50';
 export const secondaryActionClass =
   'inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:border-brand-300 hover:bg-brand-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200';
+
+/** Primary submit button copy: Add / Update + loading variants. */
+export function submitActionLabel({
+  pending,
+  editing,
+  addLabel = 'Add',
+  updateLabel = 'Update',
+  addingLabel = 'Adding…',
+  updatingLabel = 'Updating…',
+}: {
+  pending: boolean;
+  editing: boolean;
+  addLabel?: string;
+  updateLabel?: string;
+  addingLabel?: string;
+  updatingLabel?: string;
+}) {
+  if (pending) return editing ? updatingLabel : addingLabel;
+  return editing ? updateLabel : addLabel;
+}
+
+export function ActionSpinner() {
+  return (
+    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+      <path
+        className="opacity-90"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V2C5.373 2 2 5.373 2 12h2zm2 5.291A7.962 7.962 0 014 12H2c0 3.042 1.135 5.824 3 7.938l1-1.647z"
+      />
+    </svg>
+  );
+}
 
 export function PageShell({ children }: PropsWithChildren) {
   return (

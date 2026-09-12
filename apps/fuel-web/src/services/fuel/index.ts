@@ -8,4 +8,5 @@ export * from './master';
 export * from './opening';
 export * from './meterSales';
 export * from './receiving';
+export * from './credit';
 export * from './records';

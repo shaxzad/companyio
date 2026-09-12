@@ -39,6 +39,18 @@ export { Button, buttonVariants, type ButtonProps } from './components/ui/button
 export { Button as ButtonGroup } from './components/ui/button';
 export { Input, type InputProps } from './components/ui/input';
 export { Label } from './components/ui/label';
+export { FormField, type FormFieldProps } from './components/ui/form-field';
+export {
+  DataTable,
+  type DataTableColumn,
+  type DataTableProps,
+} from './components/ui/data-table';
+export {
+  ConfirmDialog,
+  type ConfirmDialogProps,
+} from './components/ui/confirm-dialog';
+export { useConfirmDialog, type ConfirmRequest } from './hooks/useConfirmDialog';
+export { Table, TableHeader, TableBody, TableRow, TableCell } from './components/ui/table/index';
 export { Separator } from './components/ui/separator';
 export {
   DropdownMenu,
@@ -102,7 +114,7 @@ export { default as Radio } from './components/form/input/Radio';
 export { default as RadioSm } from './components/form/input/RadioSm';
 export { default as TextArea } from './components/form/input/TextArea';
 export { default as Switch } from './components/form/switch/Switch';
-export { default as DatePicker } from './components/form/date-picker';
+export { default as DatePicker, type DatePickerProps } from './components/form/date-picker';
 export { default as Form } from './components/form/Form';
 export { default as MultiSelect } from './components/form/MultiSelect';
 export { default as Select } from './components/form/Select';

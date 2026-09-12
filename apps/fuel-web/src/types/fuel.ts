@@ -18,12 +18,6 @@ export type FuelType = {
   active?: boolean;
 };
 
-export type Organization = {
-  id: string;
-  name: string;
-  vehicles: Array<{ id: string; registration: string }>;
-};
-
 export type StationAssets = {
   tanks: Array<{
     id: string;

@@ -23,6 +23,11 @@ import RatesPage from '../features/settings/RatesPage';
 import DailyOpeningPage from '../features/opening/DailyOpeningPage';
 import MeterSalesPage from '../features/sales/MeterSalesPage';
 import ReceivingPage from '../features/receiving/ReceivingPage';
+import CompaniesPage from '../features/companies/CompaniesPage';
+import VehiclesPage from '../features/companies/VehiclesPage';
+import CreditSalePage from '../features/credit/CreditSalePage';
+import CreditInvoicePage from '../features/credit/CreditInvoicePage';
+import CompanyLedgerPage from '../features/credit/CompanyLedgerPage';
 
 /**
  * Fuel app route modules — single source of truth for React Router + sidebar.
@@ -101,25 +106,9 @@ export const fuelRoutes: AppRouteModule[] = [
   },
   {
     key: 'fleet-sales',
-    name: 'Fleet sales',
+    name: 'Credit sales',
     path: '/fleet-sales',
-    element: (
-      <FuelRecordPage
-        title="Fleet sales"
-        description="Issue fuel to an organization vehicle, post the credit sale, and keep its history traceable."
-        endpoint="/fuel/sales"
-        defaults={{ saleType: 'CREDIT' }}
-        fields={[
-          { name: 'stationId', label: 'Station', required: true },
-          { name: 'fuelTypeId', label: 'Fuel type', required: true },
-          { name: 'tankId', label: 'Tank', required: true },
-          { name: 'organizationId', label: 'Organization', required: true },
-          { name: 'vehicleId', label: 'Vehicle', required: true },
-          { name: 'litres', label: 'Litres', type: 'number', required: true },
-          { name: 'unitPrice', label: 'Selling price per litre', type: 'number' },
-        ]}
-      />
-    ),
+    element: <CreditSalePage />,
     group: 'sales-credit',
     groupName: 'Sales & Credit',
     groupIcon: <DollarLineIcon />,
@@ -129,25 +118,19 @@ export const fuelRoutes: AppRouteModule[] = [
     priority: 2,
   },
   {
+    key: 'credit-invoice',
+    name: 'Credit invoice',
+    path: '/credit-sales/:saleId/invoice',
+    element: <CreditInvoicePage />,
+    hideInMenu: true,
+    auth: true,
+    permissions: ['sales.read'],
+  },
+  {
     key: 'organizations',
-    name: 'Organizations',
+    name: 'Companies',
     path: '/organizations',
-    element: (
-      <FuelRecordPage
-        title="Organizations"
-        description="Manage credit customers, vehicles, limits, statements, and payment history."
-        endpoint="/fuel/organizations"
-        fields={[
-          { name: 'name', label: 'Organization name', required: true },
-          { name: 'contactName', label: 'Contact person' },
-          { name: 'phone', label: 'Phone' },
-          { name: 'email', label: 'Billing email', type: 'email' },
-          { name: 'address', label: 'Address' },
-          { name: 'paymentTerms', label: 'Payment terms' },
-          { name: 'creditLimit', label: 'Credit limit', type: 'number' },
-        ]}
-      />
-    ),
+    element: <CompaniesPage />,
     group: 'sales-credit',
     groupName: 'Sales & Credit',
     groupIcon: <DollarLineIcon />,
@@ -160,47 +143,16 @@ export const fuelRoutes: AppRouteModule[] = [
     key: 'customers',
     name: 'Customers',
     path: '/customers',
-    element: (
-      <FuelRecordPage
-        title="Customers"
-        description="Manage customer records, contacts, and account activity."
-        endpoint="/fuel/organizations"
-        fields={[
-          { name: 'name', label: 'Customer / organization name', required: true },
-          { name: 'contactName', label: 'Contact person' },
-          { name: 'phone', label: 'Phone' },
-          { name: 'email', label: 'Email', type: 'email' },
-          { name: 'address', label: 'Address' },
-        ]}
-      />
-    ),
-    group: 'sales-credit',
-    groupName: 'Sales & Credit',
-    groupIcon: <DollarLineIcon />,
-    position: MenuPositions.Middle,
+    redirectTo: '/organizations',
+    hideInMenu: true,
     auth: true,
     permissions: ['credit.read'],
-    priority: 4,
   },
   {
     key: 'vehicles',
     name: 'Vehicles',
     path: '/vehicles',
-    element: (
-      <FuelRecordPage
-        title="Vehicles"
-        description="Manage organization vehicles, drivers, fuel types, and vehicle history."
-        endpoint={'/fuel/organizations/${organizationId}/vehicles'}
-        fields={[
-          { name: 'organizationId', label: 'Organization', required: true },
-          { name: 'registration', label: 'Registration number', required: true },
-          { name: 'type', label: 'Vehicle type' },
-          { name: 'makeModel', label: 'Make / model' },
-          { name: 'driver', label: 'Driver' },
-          { name: 'notes', label: 'Notes' },
-        ]}
-      />
-    ),
+    element: <VehiclesPage />,
     group: 'sales-credit',
     groupName: 'Sales & Credit',
     groupIcon: <DollarLineIcon />,
@@ -211,14 +163,9 @@ export const fuelRoutes: AppRouteModule[] = [
   },
   {
     key: 'credit-accounts',
-    name: 'Credit accounts',
+    name: 'Company ledger',
     path: '/credit-accounts',
-    element: (
-      <FuelModulePage
-        title="Credit accounts"
-        description="Review organization credit limits, balances, statements, and overdue accounts."
-      />
-    ),
+    element: <CompanyLedgerPage />,
     group: 'sales-credit',
     groupName: 'Sales & Credit',
     groupIcon: <DollarLineIcon />,

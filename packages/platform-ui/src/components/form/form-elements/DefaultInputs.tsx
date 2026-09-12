@@ -3,7 +3,7 @@ import ComponentCard from '../../common/ComponentCard';
 import Label from '../Label';
 import Input from '../input/InputField';
 import Select from '../Select';
-import { EyeCloseIcon, EyeIcon, TimeIcon } from '../../../icons';
+import { EyeCloseIcon, EyeIcon } from '../../../icons';
 import DatePicker from '../date-picker';
 
 export default function DefaultInputs() {
@@ -57,23 +57,20 @@ export default function DefaultInputs() {
         <div>
           <DatePicker
             id="date-picker"
-            label="Date Picker Input"
+            label="Date picker"
             placeholder="Select a date"
-            onChange={(dates, currentDateString) => {
-              // Handle your logic
-              console.log({ dates, currentDateString });
-            }}
+            onChange={(value) => console.log({ value })}
           />
         </div>
 
         <div>
-          <Label htmlFor="tm">Time Picker Input</Label>
-          <div className="relative">
-            <Input type="time" id="tm" name="tm" onChange={(e) => console.log(e.target.value)} />
-            <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
-              <TimeIcon className="size-6" />
-            </span>
-          </div>
+          <DatePicker
+            id="datetime-picker"
+            label="Date / time picker"
+            enableTime
+            placeholder="Select date and time"
+            onChange={(value) => console.log({ value })}
+          />
         </div>
         <div>
           <Label htmlFor="tm">Input with Payment</Label>

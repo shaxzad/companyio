@@ -1,13 +1,62 @@
-import { useQuery } from '@tanstack/react-query';
-import { listOrganizations } from '../services/fuel';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  createOrganization,
+  createVehicle,
+  listOrganizations,
+  listVehicles,
+  updateOrganization,
+  updateVehicle,
+} from '../services/fuel';
+import type { OrganizationInput, VehicleInput } from '../types';
 import { queryKeys } from './queryKeys';
 
-const ORGANIZATIONS_STALE_MS = 5 * 60 * 1000;
-
-export function useOrganizations() {
+export function useOrganizations(options?: { includeInactive?: boolean }) {
   return useQuery({
-    queryKey: queryKeys.organizations.all,
-    queryFn: listOrganizations,
-    staleTime: ORGANIZATIONS_STALE_MS,
+    queryKey: queryKeys.organizations.list(options?.includeInactive ?? false),
+    queryFn: () => listOrganizations(options),
+    staleTime: 60 * 1000,
   });
+}
+
+export function useVehicles(options?: { organizationId?: string; includeInactive?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.vehicles.list(options?.organizationId, options?.includeInactive ?? false),
+    queryFn: () => listVehicles(options),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useOrganizationMutations() {
+  const queryClient = useQueryClient();
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.organizations.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.vehicles.all });
+  };
+
+  return {
+    createOrganization: useMutation({
+      mutationFn: (data: OrganizationInput) => createOrganization(data),
+      onSuccess: invalidate,
+    }),
+    updateOrganization: useMutation({
+      mutationFn: ({ id, data }: { id: string; data: Partial<OrganizationInput> }) =>
+        updateOrganization(id, data),
+      onSuccess: invalidate,
+    }),
+    createVehicle: useMutation({
+      mutationFn: ({
+        organizationId,
+        data,
+      }: {
+        organizationId: string;
+        data: VehicleInput;
+      }) => createVehicle(organizationId, data),
+      onSuccess: invalidate,
+    }),
+    updateVehicle: useMutation({
+      mutationFn: ({ id, data }: { id: string; data: Partial<VehicleInput> }) =>
+        updateVehicle(id, data),
+      onSuccess: invalidate,
+    }),
+  };
 }

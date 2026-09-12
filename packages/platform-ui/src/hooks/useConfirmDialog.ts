@@ -10,7 +10,8 @@ export type ConfirmRequest = {
 };
 
 /**
- * Reusable confirm-dialog state. Never use `window.confirm`.
+ * Reusable confirm-dialog state for any product app.
+ * Never use `window.confirm`.
  */
 export function useConfirmDialog() {
   const [request, setRequest] = useState<ConfirmRequest | null>(null);

@@ -12,6 +12,12 @@ export const queryKeys = {
   },
   organizations: {
     all: ['organizations'] as const,
+    list: (includeInactive = false) => ['organizations', { includeInactive }] as const,
+  },
+  vehicles: {
+    all: ['vehicles'] as const,
+    list: (organizationId?: string, includeInactive = false) =>
+      ['vehicles', { organizationId: organizationId ?? null, includeInactive }] as const,
   },
   assets: {
     byStation: (stationId: string) => ['stationAssets', stationId] as const,
@@ -38,6 +44,10 @@ export const queryKeys = {
   receiving: {
     receipts: (stationId?: string, tankId?: string) =>
       ['receipts', { stationId: stationId ?? null, tankId: tankId ?? null }] as const,
+  },
+  credit: {
+    sale: (saleId: string) => ['creditSale', saleId] as const,
+    ledger: (organizationId: string) => ['companyLedger', organizationId] as const,
   },
   users: {
     all: ['users'] as const,

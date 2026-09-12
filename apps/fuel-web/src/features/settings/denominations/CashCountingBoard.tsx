@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { DataTable, type DataTableColumn } from '@companyio/platform-ui';
 import type { CashCountLine } from '../../../utils';
 import { formatMoney } from '../../../utils';
 import { secondaryActionClass, surfaceClass } from '../../../ui/page';
@@ -19,6 +21,49 @@ export function CashCountingBoard({
   onClear,
   emptyHint,
 }: CashCountingBoardProps) {
+  const columns = useMemo<DataTableColumn<CashCountLine>[]>(
+    () => [
+      {
+        id: 'denomination',
+        header: 'Denomination',
+        cell: (line) => (
+          <p className="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
+            {line.label}
+          </p>
+        ),
+      },
+      {
+        id: 'count',
+        header: 'Count',
+        headerClassName: 'text-center',
+        cell: (line) => (
+          <CountStepper
+            id={`count-${line.denominationId}`}
+            value={line.countRaw}
+            invalid={line.invalid}
+            onChange={(next) => onCountChange(line.denominationId, next)}
+            onBump={(delta) => onBump(line.denominationId, delta)}
+          />
+        ),
+      },
+      {
+        id: 'calculation',
+        header: 'Calculation',
+        className: 'text-xs tabular-nums text-gray-500 dark:text-gray-400',
+        cell: (line) => line.calcText,
+      },
+      {
+        id: 'amount',
+        header: 'Amount',
+        className: 'text-end text-sm font-semibold tabular-nums text-brand-600 dark:text-brand-400',
+        headerClassName: 'text-end',
+        cell: (line) =>
+          line.countRaw.trim() === '' || line.invalid ? '—' : formatMoney(line.amount),
+      },
+    ],
+    [onBump, onCountChange]
+  );
+
   if (lines.length === 0) {
     return (
       <section className={`${surfaceClass} p-6 text-center`}>
@@ -45,44 +90,13 @@ export function CashCountingBoard({
         </button>
       </div>
 
-      <div className="hidden overflow-x-auto md:block">
-        <table className="min-w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 bg-gray-50 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-800 dark:bg-gray-950/50">
-              <th className="px-3 py-2">Denomination</th>
-              <th className="px-3 py-2 text-center">Count</th>
-              <th className="px-3 py-2">Calculation</th>
-              <th className="px-3 py-2 text-end">Amount</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {lines.map((line) => (
-              <tr key={line.denominationId} className="align-middle">
-                <td className="px-3 py-1.5">
-                  <p className="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
-                    {line.label}
-                  </p>
-                </td>
-                <td className="px-3 py-1.5">
-                  <CountStepper
-                    id={`count-${line.denominationId}`}
-                    value={line.countRaw}
-                    invalid={line.invalid}
-                    onChange={(next) => onCountChange(line.denominationId, next)}
-                    onBump={(delta) => onBump(line.denominationId, delta)}
-                  />
-                </td>
-                <td className="px-3 py-1.5 text-xs tabular-nums text-gray-500 dark:text-gray-400">
-                  {line.calcText}
-                </td>
-                <td className="px-3 py-1.5 text-end text-sm font-semibold tabular-nums text-brand-600 dark:text-brand-400">
-                  {line.countRaw.trim() === '' || line.invalid ? '—' : formatMoney(line.amount)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        dense
+        className="hidden md:block"
+        columns={columns}
+        rows={lines}
+        getRowKey={(line) => line.denominationId}
+      />
 
       <ul className="divide-y divide-gray-100 md:hidden dark:divide-gray-800">
         {lines.map((line) => (

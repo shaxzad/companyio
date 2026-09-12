@@ -24,24 +24,6 @@ const fuelTypeInput = z.object({
   reorderLevel: z.number().nonnegative(),
 });
 
-const organizationInput = z.object({
-  name: z.string().min(1).max(160),
-  contactName: z.string().max(120).optional(),
-  phone: z.string().max(40).optional(),
-  email: z.string().email().optional(),
-  address: z.string().max(240).optional(),
-  paymentTerms: z.string().max(80).optional(),
-  creditLimit: z.number().nonnegative().default(0),
-});
-
-const vehicleInput = z.object({
-  registration: z.string().min(1).max(30),
-  type: z.string().max(80).optional(),
-  makeModel: z.string().max(120).optional(),
-  driver: z.string().max(120).optional(),
-  notes: z.string().max(500).optional(),
-});
-
 const saleInput = z.object({
   stationId: id,
   fuelTypeId: id,
@@ -276,67 +258,6 @@ export const registerFuelRoutes = (
             purchasePrice: input.purchasePrice,
             minimumStock: input.minimumStock,
             reorderLevel: input.reorderLevel,
-          },
-        })
-      );
-  });
-
-  app.get('/api/v1/fuel/organizations', async (request, reply) => {
-    const user = await requireUser(request, reply, authenticate);
-    if (!user) return;
-    return reply.send(
-      await prisma.organization.findMany({
-        where: { businessId: user.main_business_id, active: true },
-        include: { vehicles: true },
-        orderBy: { name: 'asc' },
-      })
-    );
-  });
-
-  app.post('/api/v1/fuel/organizations', async (request, reply) => {
-    const user = await requireUser(request, reply, authenticate);
-    if (!user) return;
-    const input = organizationInput.parse(request.body);
-    return reply
-      .code(201)
-      .send(
-        await prisma.organization.create({
-          data: {
-            id: randomUUID(),
-            businessId: user.main_business_id,
-            name: input.name,
-            contactName: input.contactName,
-            phone: input.phone,
-            email: input.email,
-            address: input.address,
-            paymentTerms: input.paymentTerms,
-            creditLimit: input.creditLimit,
-          },
-        })
-      );
-  });
-
-  app.post('/api/v1/fuel/organizations/:organizationId/vehicles', async (request, reply) => {
-    const user = await requireUser(request, reply, authenticate);
-    if (!user) return;
-    const params = z.object({ organizationId: id }).parse(request.params);
-    const organization = await prisma.organization.findFirst({
-      where: { id: params.organizationId, businessId: user.main_business_id },
-    });
-    if (!organization) return reply.code(404).send({ message: 'Organization not found.' });
-    const input = vehicleInput.parse(request.body);
-    return reply
-      .code(201)
-      .send(
-        await prisma.vehicle.create({
-          data: {
-            id: randomUUID(),
-            organizationId: organization.id,
-            registration: input.registration,
-            type: input.type,
-            makeModel: input.makeModel,
-            driver: input.driver,
-            notes: input.notes,
           },
         })
       );
@@ -670,48 +591,6 @@ export const registerFuelRoutes = (
       },
       sales,
     });
-  });
-
-  app.get('/api/v1/fuel/organizations/:organizationId/ledger', async (request, reply) => {
-    const user = await requireUser(request, reply, authenticate);
-    if (!user) return;
-    const params = z.object({ organizationId: id }).parse(request.params);
-    const organization = await prisma.organization.findFirst({
-      where: { id: params.organizationId, businessId: user.main_business_id },
-      include: {
-        sales: {
-          where: { saleType: 'CREDIT', status: 'CONFIRMED' },
-          include: { vehicle: true, lines: { include: { fuelType: true } } },
-          orderBy: { soldAt: 'asc' },
-        },
-        payments: { orderBy: { paidAt: 'asc' } },
-      },
-    });
-    if (!organization) return reply.code(404).send({ message: 'Organization not found.' });
-    const entries = [
-      ...organization.sales.map((sale) => ({
-        date: sale.soldAt,
-        type: 'FUEL',
-        debit: numberValue(sale.totalAmount),
-        credit: 0,
-        reference: sale.saleNumber,
-        description: sale.vehicle?.registration ?? 'Credit fuel sale',
-      })),
-      ...organization.payments.map((payment) => ({
-        date: payment.paidAt,
-        type: 'PAYMENT',
-        debit: 0,
-        credit: numberValue(payment.amount),
-        reference: payment.reference ?? payment.id,
-        description: `${payment.method} payment`,
-      })),
-    ].sort((left, right) => left.date.getTime() - right.date.getTime());
-    let balance = 0;
-    const ledger = entries.map((entry) => ({
-      ...entry,
-      balance: (balance += entry.debit - entry.credit),
-    }));
-    return reply.send({ organization, ledger, outstanding: balance });
   });
 
   app.post('/api/v1/fuel/daily-closings', async (request, reply) => {

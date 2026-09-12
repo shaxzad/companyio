@@ -235,6 +235,10 @@ model Organization {
   address       String?
   paymentTerms  String?
   creditLimit   Decimal        @default(0) @db.Decimal(14, 2)
+  /// Starting receivable balance before tracked sales/payments (F7 ledger).
+  openingBalance Decimal       @default(0) @db.Decimal(14, 2)
+  /// Credit settlement style: daily, monthly, or both (F6).
+  creditType    CreditType     @default(BOTH)
   billingDay    Int?
   active        Boolean        @default(true)
   createdAt     DateTime       @default(now())
@@ -246,6 +250,12 @@ model Organization {
   notifications Notification[]
 
   @@index([businessId])
+}
+
+enum CreditType {
+  DAILY
+  MONTHLY
+  BOTH
 }
 
 model Vehicle {
@@ -270,6 +280,10 @@ model Sale {
   organizationId String?
   vehicleId      String?
   saleNumber     String        @unique
+  /// Customer-facing invoice number for CREDIT sales (F7).
+  invoiceNumber  String?       @unique
+  /// Driver name captured at sale time (may differ from vehicle master).
+  driverName     String?
   saleType       SaleType
   status         RecordStatus  @default(CONFIRMED)
   soldAt         DateTime

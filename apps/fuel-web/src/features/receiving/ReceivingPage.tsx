@@ -1,7 +1,7 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
-import { Input, Label, PageMeta, Select } from '@companyio/platform-ui';
+import { DataTable, type DataTableColumn, DatePicker, Input, Label, PageMeta, Select } from '@companyio/platform-ui';
 import {
   useCreateReceiving,
   useFuelTypes,
@@ -9,6 +9,7 @@ import {
   useSelectedStation,
   useStationAssets,
 } from '../../hooks';
+import type { FuelReceipt } from '../../types';
 import { formatMoney, roundTo, toErrorMessage } from '../../utils';
 import { canEditPath, roleOf } from '../auth/roles';
 import {
@@ -90,6 +91,56 @@ export default function ReceivingPage() {
     field: K,
     value: ReturnType<typeof emptyForm>[K]
   ) => setForm((current) => ({ ...current, [field]: value }));
+
+  const historyColumns = useMemo<DataTableColumn<FuelReceipt>[]>(
+    () => [
+      {
+        id: 'when',
+        header: 'When',
+        cell: (row) => (
+          <>
+            <p className="font-medium">{new Date(row.receivedAt).toLocaleString()}</p>
+            <p className="text-xs text-gray-500">
+              {row.supplier}
+              {row.tankerNumber ? ` · ${row.tankerNumber}` : ''}
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'tank',
+        header: 'Tank / product',
+        cell: (row) => `${row.tankName ?? '—'} · ${row.fuelTypeName ?? '—'}`,
+      },
+      {
+        id: 'expected',
+        header: 'Expected',
+        cell: (row) => row.expectedLitres,
+      },
+      {
+        id: 'actual',
+        header: 'Actual',
+        className: 'font-medium',
+        cell: (row) => row.actualLitres,
+      },
+      {
+        id: 'access',
+        header: 'Access',
+        cell: (row) =>
+          row.accessLitres > 0
+            ? `+${row.accessLitres}`
+            : row.shortageLitres > 0
+              ? `−${row.shortageLitres}`
+              : '0',
+      },
+      {
+        id: 'fuelCost',
+        header: 'Fuel cost',
+        cell: (row) => money(row.fuelCost),
+      },
+    ],
+    []
+  );
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -191,14 +242,14 @@ export default function ReceivingPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="recv-at">Date / time</Label>
-                <Input
+                <DatePicker
                   id="recv-at"
-                  type="datetime-local"
-                  placeholder="Leave blank to use now"
+                  label="Date / time"
+                  enableTime
                   value={form.receivedAt}
-                  onChange={(event) => update('receivedAt', event.target.value)}
+                  onChange={(value) => update('receivedAt', value)}
                   disabled={!canEdit}
+                  hint="Leave blank to use now"
                 />
               </div>
               <div>
@@ -437,57 +488,20 @@ export default function ReceivingPage() {
               />
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                <tr>
-                  <th className="px-5 py-3">When</th>
-                  <th className="px-5 py-3">Tank / product</th>
-                  <th className="px-5 py-3">Expected</th>
-                  <th className="px-5 py-3">Actual</th>
-                  <th className="px-5 py-3">Access</th>
-                  <th className="px-5 py-3">Fuel cost</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {history.map((row) => (
-                  <tr key={row.id}>
-                    <td className="px-5 py-3">
-                      <p className="font-medium">{new Date(row.receivedAt).toLocaleString()}</p>
-                      <p className="text-xs text-gray-500">
-                        {row.supplier}
-                        {row.tankerNumber ? ` · ${row.tankerNumber}` : ''}
-                      </p>
-                    </td>
-                    <td className="px-5 py-3">
-                      {row.tankName ?? '—'} · {row.fuelTypeName ?? '—'}
-                    </td>
-                    <td className="px-5 py-3">{row.expectedLitres}</td>
-                    <td className="px-5 py-3 font-medium">{row.actualLitres}</td>
-                    <td className="px-5 py-3">
-                      {row.accessLitres > 0
-                        ? `+${row.accessLitres}`
-                        : row.shortageLitres > 0
-                          ? `−${row.shortageLitres}`
-                          : '0'}
-                    </td>
-                    <td className="px-5 py-3">{money(row.fuelCost)}</td>
-                  </tr>
-                ))}
-                {history.length === 0 && (
-                  <tr>
-                    <td className="px-5 py-8 text-gray-500" colSpan={6}>
-                      No receipts yet.{' '}
-                      <Link to="/opening" className="font-semibold text-brand-600">
-                        Open the day
-                      </Link>{' '}
-                      if you have not, then save the first tanker.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={historyColumns}
+            rows={history}
+            getRowKey={(row) => row.id}
+            emptyMessage={
+              <>
+                No receipts yet.{' '}
+                <Link to="/opening" className="font-semibold text-brand-600">
+                  Open the day
+                </Link>{' '}
+                if you have not, then save the first tanker.
+              </>
+            }
+          />
         </section>
       </PageShell>
     </>

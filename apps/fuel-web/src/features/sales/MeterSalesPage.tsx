@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
-import { Input, Label, PageMeta, Select } from '@companyio/platform-ui';
+import { DataTable, type DataTableColumn, DatePicker, Input, Label, PageMeta, Select } from '@companyio/platform-ui';
 import { useMeterSaleSheet, usePostMeterSales, useSelectedStation } from '../../hooks';
 import type { MeterSaleRow } from '../../types';
 import {
@@ -78,7 +78,6 @@ export default function MeterSalesPage() {
       Object.fromEntries(
         sheet.rows.map((row) => [
           row.nozzleId,
-          // Suggested/posted rate: hide bare 0 so staff must confirm a real selling rate.
           toFinancialInput(row.unitPrice, { allowZero: Boolean(sheet.alreadyPosted) }),
         ])
       )
@@ -155,6 +154,117 @@ export default function MeterSalesPage() {
     if (rate.toFixed(2) === row.suggestedRate.toFixed(2)) return true;
     return Boolean(reasons[row.nozzleId]?.trim());
   });
+
+  const meterColumns = useMemo<DataTableColumn<MeterSaleRow>[]>(
+    () => [
+      {
+        id: 'meter',
+        header: 'Meter',
+        cell: (row) => (
+          <>
+            <p className="font-medium">
+              {row.pumpName} · Pump {row.pumpNumber}
+            </p>
+            <p className="text-xs text-gray-500">
+              Nozzle {row.nozzleNumber}
+              {row.tankName ? ` · ${row.tankName}` : ' · tank not linked'}
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'opening',
+        header: 'Opening',
+        className: 'text-gray-600',
+        cell: (row) => row.openingReading,
+      },
+      {
+        id: 'closing',
+        header: 'Closing',
+        className: 'min-w-36',
+        cell: (row) => (
+          <Input
+            type="number"
+            placeholder="Enter closing"
+            value={closings[row.nozzleId] ?? ''}
+            onChange={(event) =>
+              setClosings((current) => ({
+                ...current,
+                [row.nozzleId]: event.target.value,
+              }))
+            }
+            disabled={readOnly}
+            required={!readOnly}
+          />
+        ),
+      },
+      {
+        id: 'litres',
+        header: 'Litres',
+        className: 'font-medium',
+        cell: (row) => {
+          const closing = closings[row.nozzleId] ?? '';
+          return closing === '' ? '—' : litresOf(closing, row.openingReading);
+        },
+      },
+      {
+        id: 'rate',
+        header: 'Rate',
+        className: 'min-w-32',
+        cell: (row) => (
+          <Input
+            type="number"
+            placeholder={String(row.suggestedRate)}
+            value={rates[row.nozzleId] ?? ''}
+            onChange={(event) =>
+              setRates((current) => ({
+                ...current,
+                [row.nozzleId]: event.target.value,
+              }))
+            }
+            disabled={readOnly}
+          />
+        ),
+      },
+      {
+        id: 'amount',
+        header: 'Amount',
+        className: 'font-semibold',
+        cell: (row) => {
+          const closing = closings[row.nozzleId] ?? '';
+          const rate = rateForRow(rates[row.nozzleId], row.suggestedRate) ?? 0;
+          const litres = litresOf(closing, row.openingReading);
+          return closing === '' ? '—' : money(roundTo(litres * rate, 2));
+        },
+      },
+      {
+        id: 'reason',
+        header: 'Rate reason',
+        className: 'min-w-48',
+        cell: (row) => {
+          const rate = rateForRow(rates[row.nozzleId], row.suggestedRate) ?? row.suggestedRate;
+          const overridden = rate.toFixed(2) !== row.suggestedRate.toFixed(2);
+          return (
+            <Input
+              placeholder={
+                overridden ? 'Why was the rate changed?' : 'Needed only if rate changes'
+              }
+              value={reasons[row.nozzleId] ?? ''}
+              onChange={(event) =>
+                setReasons((current) => ({
+                  ...current,
+                  [row.nozzleId]: event.target.value,
+                }))
+              }
+              disabled={readOnly || !overridden}
+              required={overridden && !readOnly}
+            />
+          );
+        },
+      },
+    ],
+    [closings, rates, reasons, readOnly]
+  );
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -284,22 +394,23 @@ export default function MeterSalesPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="sales-sold-at">Sale date / time</Label>
-                <Input
+                <DatePicker
                   id="sales-sold-at"
-                  type="datetime-local"
-                  placeholder="Leave blank to use now"
+                  label="Sale date / time"
+                  enableTime
                   value={soldAt}
-                  onChange={(event) => setSoldAt(event.target.value)}
+                  onChange={setSoldAt}
                   disabled={readOnly}
+                  hint="Leave blank to use now"
                 />
               </div>
             </div>
             {isLoading && <p className="mt-4 text-sm text-gray-500">Loading meters...</p>}
             {sheet?.postedSale && (
               <p className="mt-4 text-sm text-gray-500">
-                {sheet.postedSale.saleNumber} · sold {new Date(sheet.postedSale.soldAt).toLocaleString()} ·
-                entered {new Date(sheet.postedSale.enteredAt).toLocaleString()}
+                {sheet.postedSale.saleNumber} · sold{' '}
+                {new Date(sheet.postedSale.soldAt).toLocaleString()} · entered{' '}
+                {new Date(sheet.postedSale.enteredAt).toLocaleString()}
               </p>
             )}
           </Surface>
@@ -319,93 +430,12 @@ export default function MeterSalesPage() {
                     Total Sale {code} {money(total?.amount ?? 0)}
                   </p>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-left text-sm">
-                    <thead className="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                      <tr>
-                        <th className="px-4 py-3">Meter</th>
-                        <th className="px-4 py-3">Opening</th>
-                        <th className="px-4 py-3">Closing</th>
-                        <th className="px-4 py-3">Litres</th>
-                        <th className="px-4 py-3">Rate</th>
-                        <th className="px-4 py-3">Amount</th>
-                        <th className="px-4 py-3">Rate reason</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {rows.map((row) => {
-                        const closing = closings[row.nozzleId] ?? '';
-                        const rate = Number(rates[row.nozzleId] || row.suggestedRate);
-                        const litres = litresOf(closing, row.openingReading);
-                        const amount = roundTo(litres * rate, 2);
-                        const overridden = rate.toFixed(2) !== row.suggestedRate.toFixed(2);
-                        return (
-                          <tr key={row.nozzleId}>
-                            <td className="px-4 py-3">
-                              <p className="font-medium">
-                                {row.pumpName} · Pump {row.pumpNumber}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                Nozzle {row.nozzleNumber}
-                                {row.tankName ? ` · ${row.tankName}` : ' · tank not linked'}
-                              </p>
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">{row.openingReading}</td>
-                            <td className="min-w-36 px-4 py-3">
-                              <Input
-                                type="number"
-                                placeholder="Enter closing"
-                                value={closing}
-                                onChange={(event) =>
-                                  setClosings((current) => ({
-                                    ...current,
-                                    [row.nozzleId]: event.target.value,
-                                  }))
-                                }
-                                disabled={readOnly}
-                                required={!readOnly}
-                              />
-                            </td>
-                            <td className="px-4 py-3 font-medium">{closing === '' ? '—' : litres}</td>
-                            <td className="min-w-32 px-4 py-3">
-                              <Input
-                                type="number"
-                                placeholder={String(row.suggestedRate)}
-                                value={rates[row.nozzleId] ?? ''}
-                                onChange={(event) =>
-                                  setRates((current) => ({
-                                    ...current,
-                                    [row.nozzleId]: event.target.value,
-                                  }))
-                                }
-                                disabled={readOnly}
-                              />
-                            </td>
-                            <td className="px-4 py-3 font-semibold">
-                              {closing === '' ? '—' : money(amount)}
-                            </td>
-                            <td className="min-w-48 px-4 py-3">
-                              <Input
-                                placeholder={
-                                  overridden ? 'Why was the rate changed?' : 'Needed only if rate changes'
-                                }
-                                value={reasons[row.nozzleId] ?? ''}
-                                onChange={(event) =>
-                                  setReasons((current) => ({
-                                    ...current,
-                                    [row.nozzleId]: event.target.value,
-                                  }))
-                                }
-                                disabled={readOnly || !overridden}
-                                required={overridden && !readOnly}
-                              />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <DataTable
+                  columns={meterColumns}
+                  rows={rows}
+                  getRowKey={(row) => row.nozzleId}
+                  emptyMessage="No meters for this product."
+                />
               </section>
             );
           })}

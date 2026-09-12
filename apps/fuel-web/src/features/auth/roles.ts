@@ -32,6 +32,7 @@ const SCREEN_ACCESS: Record<string, ScreenAccess> = {
   '/users': { view: OWNER, edit: OWNER, approve: [] },
   '/sales': { view: OPERATIONS, edit: OPERATIONS, approve: APPROVERS },
   '/fleet-sales': { view: OPERATIONS, edit: OPERATIONS, approve: APPROVERS },
+  '/credit-sales': { view: OPERATIONS, edit: OPERATIONS, approve: APPROVERS },
   '/fuel-purchases': { view: OPERATIONS, edit: OPERATIONS, approve: APPROVERS },
   '/expenses': { view: OPERATIONS, edit: OPERATIONS, approve: APPROVERS },
   '/organizations': { view: CREDIT, edit: CREDIT, approve: APPROVERS },
@@ -50,6 +51,7 @@ const FALLBACK: ScreenAccess = { view: OWNER, edit: OWNER, approve: OWNER };
 
 export const screenPath = (path: string) => {
   if (path === '/receiving') return '/fuel-purchases';
+  if (path.startsWith('/credit-sales')) return '/credit-sales';
   if (path.startsWith('/settings')) return '/settings';
   if (path === '/assets') return '/settings';
   if (path === '/' || path === '') return '/';

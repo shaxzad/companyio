@@ -2,11 +2,18 @@ export type {
   CashDenomination,
   FuelDashboard,
   FuelType,
-  Organization,
   SellingRate,
   Station,
   StationAssets,
 } from './fuel';
+export type {
+  CreditType,
+  Organization,
+  OrganizationInput,
+  OrganizationVehicle,
+  Vehicle,
+  VehicleInput,
+} from './organization';
 export type {
   BusinessDay,
   OpenBusinessDayInput,
@@ -27,5 +34,12 @@ export type {
   FuelReceipt,
   ListReceiptsParams,
 } from './receiving';
+export type {
+  CompanyLedger,
+  CreateCreditSaleInput,
+  CreditSale,
+  CreditSaleLine,
+  LedgerEntry,
+} from './credit';
 export type { ApiErrorBody } from './apiError';
 export { ApiError, isApiError, parseApiErrorBody } from './apiError';

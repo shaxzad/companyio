@@ -1,12 +1,13 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
-import { Input, Label, PageMeta, Select } from '@companyio/platform-ui';
+import { DataTable, type DataTableColumn, DatePicker, Input, Label, PageMeta, Select } from '@companyio/platform-ui';
 import {
   useOpenBusinessDay,
   useOpeningPreview,
   useSelectedStation,
 } from '../../hooks';
+import type { OpeningMeterRow, OpeningTankRow } from '../../types';
 import { emptyRecord, requireFinancialInput, toErrorMessage, toFinancialInput, todayYmd } from '../../utils';
 import { canEditPath, roleOf } from '../auth/roles';
 import {
@@ -87,15 +88,14 @@ export default function DailyOpeningPage() {
   const queryError = stationsError || previewError;
   const displayError = error || (queryError ? toErrorMessage(queryError) : '');
 
-  const metersByProduct = useMemo(() => {
-    const rows = preview?.existing?.meters ?? preview?.meters ?? [];
-    const groups = new Map<string, typeof rows>();
-    rows.forEach((row) => {
-      const key = row.productName;
-      groups.set(key, [...(groups.get(key) ?? []), row]);
-    });
-    return [...groups.entries()];
-  }, [preview]);
+  const meterRows = useMemo(
+    () => preview?.existing?.meters ?? preview?.meters ?? [],
+    [preview]
+  );
+  const tankRows = useMemo(
+    () => preview?.existing?.tanks ?? preview?.tanks ?? [],
+    [preview]
+  );
 
   const alreadyOpened = Boolean(preview?.existing);
   const readOnly = alreadyOpened || !canEdit;
@@ -103,6 +103,76 @@ export default function DailyOpeningPage() {
     canEdit &&
     Boolean(preview?.canOpen) &&
     (!preview?.requiresOwnerOverride || (isOwner && overrideReason.trim().length >= 8));
+
+  const meterColumns = useMemo<DataTableColumn<OpeningMeterRow>[]>(
+    () => [
+      {
+        id: 'product',
+        header: 'Product',
+        className: 'font-medium',
+        cell: (row) => row.productName,
+      },
+      {
+        id: 'pump',
+        header: 'Pump / nozzle',
+        className: 'text-gray-600',
+        cell: (row) =>
+          `${row.pumpName} · Pump ${row.pumpNumber} · Nozzle ${row.nozzleNumber}`,
+      },
+      {
+        id: 'opening',
+        header: 'Opening reading',
+        cell: (row) => (
+          <Input
+            type="number"
+            placeholder="e.g. 12450.300"
+            value={meters[row.nozzleId] ?? ''}
+            onChange={(event) =>
+              setMeters((current) => ({
+                ...current,
+                [row.nozzleId]: event.target.value,
+              }))
+            }
+            disabled={readOnly}
+          />
+        ),
+      },
+    ],
+    [meters, readOnly]
+  );
+
+  const tankColumns = useMemo<DataTableColumn<OpeningTankRow>[]>(
+    () => [
+      {
+        id: 'tank',
+        header: 'Tank',
+        className: 'font-medium',
+        cell: (row) => row.tankName,
+      },
+      {
+        id: 'product',
+        header: 'Product',
+        className: 'text-gray-600',
+        cell: (row) => row.productName,
+      },
+      {
+        id: 'opening',
+        header: 'Opening stock (L)',
+        cell: (row) => (
+          <Input
+            type="number"
+            placeholder="e.g. 12000"
+            value={tanks[row.tankId] ?? ''}
+            onChange={(event) =>
+              setTanks((current) => ({ ...current, [row.tankId]: event.target.value }))
+            }
+            disabled={readOnly}
+          />
+        ),
+      },
+    ],
+    [readOnly, tanks]
+  );
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -221,15 +291,14 @@ export default function DailyOpeningPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="opening-date">Business date</Label>
-                <Input
+                <DatePicker
                   id="opening-date"
-                  type="date"
-                  placeholder="Select a business date"
+                  label="Business date"
                   value={businessDate}
-                  onChange={(event) => setBusinessDate(event.target.value)}
+                  onChange={setBusinessDate}
                   required
                   disabled={!canEdit}
+                  placeholder="Select a business date"
                 />
               </div>
             </div>
@@ -243,50 +312,12 @@ export default function DailyOpeningPage() {
                 Auto-filled from yesterday’s closing. Edit only if a correction is needed.
               </p>
             </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  <tr>
-                    <th className="px-5 py-3">Product</th>
-                    <th className="px-5 py-3">Pump / nozzle</th>
-                    <th className="px-5 py-3">Opening reading</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {metersByProduct.flatMap(([product, rows]) =>
-                    rows.map((row) => (
-                      <tr key={row.nozzleId}>
-                        <td className="px-5 py-3 font-medium">{product}</td>
-                        <td className="px-5 py-3 text-gray-600">
-                          {row.pumpName} · Pump {row.pumpNumber} · Nozzle {row.nozzleNumber}
-                        </td>
-                        <td className="px-5 py-3">
-                          <Input
-                            type="number"
-                            placeholder="e.g. 12450.300"
-                            value={meters[row.nozzleId] ?? ''}
-                            onChange={(event) =>
-                              setMeters((current) => ({
-                                ...current,
-                                [row.nozzleId]: event.target.value,
-                              }))
-                            }
-                            disabled={readOnly}
-                          />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                  {metersByProduct.length === 0 && (
-                    <tr>
-                      <td className="px-5 py-8 text-gray-500" colSpan={3}>
-                        No meters yet. Add pumps and nozzles in Settings → Tanks & meters.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              columns={meterColumns}
+              rows={meterRows}
+              getRowKey={(row) => row.nozzleId}
+              emptyMessage="No meters yet. Add pumps and nozzles in Settings → Tanks & meters."
+            />
           </Surface>
 
           <Surface padded={false}>
@@ -296,43 +327,12 @@ export default function DailyOpeningPage() {
                 Auto-filled from yesterday’s closing stock for each tank.
               </p>
             </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  <tr>
-                    <th className="px-5 py-3">Tank</th>
-                    <th className="px-5 py-3">Product</th>
-                    <th className="px-5 py-3">Opening stock (L)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {(preview?.existing?.tanks ?? preview?.tanks ?? []).map((row) => (
-                    <tr key={row.tankId}>
-                      <td className="px-5 py-3 font-medium">{row.tankName}</td>
-                      <td className="px-5 py-3 text-gray-600">{row.productName}</td>
-                      <td className="px-5 py-3">
-                        <Input
-                          type="number"
-                          placeholder="e.g. 12000"
-                          value={tanks[row.tankId] ?? ''}
-                          onChange={(event) =>
-                            setTanks((current) => ({ ...current, [row.tankId]: event.target.value }))
-                          }
-                          disabled={readOnly}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                  {(preview?.tanks.length ?? 0) === 0 && !preview?.existing && (
-                    <tr>
-                      <td className="px-5 py-8 text-gray-500" colSpan={3}>
-                        No tanks yet. Add tanks in Settings → Tanks & meters.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              columns={tankColumns}
+              rows={tankRows}
+              getRowKey={(row) => row.tankId}
+              emptyMessage="No tanks yet. Add tanks in Settings → Tanks & meters."
+            />
           </Surface>
 
           <Surface>

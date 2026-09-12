@@ -1,8 +1,9 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
-import { Input, Label, PageMeta, Select } from '@companyio/platform-ui';
+import { DataTable, type DataTableColumn, DatePicker, Input, Label, PageMeta, Select } from '@companyio/platform-ui';
 import { useFuelTypes, useRateMutations, useRates } from '../../hooks';
+import type { SellingRate } from '../../types';
 import { toErrorMessage } from '../../utils';
 import { canEditPath, roleOf } from '../auth/roles';
 import { Notice, Surface, SurfaceHeader, primaryActionClass, surfaceClass } from '../../ui/page';
@@ -52,6 +53,29 @@ export default function RatesPage() {
 
   const selected = products.find((product) => product.id === fuelTypeId);
 
+  const rateColumns = useMemo<DataTableColumn<SellingRate>[]>(
+    () => [
+      {
+        id: 'effectiveFrom',
+        header: 'Effective from',
+        cell: (rate) => new Date(rate.effectiveFrom).toLocaleString(),
+      },
+      {
+        id: 'sellingPrice',
+        header: 'Selling price',
+        className: 'font-medium',
+        cell: (rate) => String(rate.sellingPrice),
+      },
+      {
+        id: 'recorded',
+        header: 'Recorded',
+        className: 'text-gray-500',
+        cell: (rate) => new Date(rate.createdAt).toLocaleString(),
+      },
+    ],
+    []
+  );
+
   return (
     <>
       <PageMeta
@@ -93,35 +117,12 @@ export default function RatesPage() {
             <h2 className="font-semibold text-gray-900 dark:text-white">Rate history</h2>
             <p className="mt-1 text-sm text-gray-500">Newest first. Earlier rates stay on file.</p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                <tr>
-                  <th className="px-5 py-3">Effective from</th>
-                  <th className="px-5 py-3">Selling price</th>
-                  <th className="px-5 py-3">Recorded</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {rates.map((rate) => (
-                  <tr key={rate.id}>
-                    <td className="px-5 py-4">{new Date(rate.effectiveFrom).toLocaleString()}</td>
-                    <td className="px-5 py-4 font-medium">{String(rate.sellingPrice)}</td>
-                    <td className="px-5 py-4 text-gray-500">
-                      {new Date(rate.createdAt).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-                {rates.length === 0 && (
-                  <tr>
-                    <td className="px-5 py-8 text-gray-500" colSpan={3}>
-                      No dated rates yet. Post the first selling price for this product.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={rateColumns}
+            rows={rates}
+            getRowKey={(rate) => rate.id}
+            emptyMessage="No dated rates yet. Post the first selling price for this product."
+          />
         </section>
 
         {canEdit && (
@@ -145,13 +146,13 @@ export default function RatesPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="rate-from">Effective from</Label>
-                <Input
+                <DatePicker
                   id="rate-from"
-                  type="datetime-local"
-                  placeholder="Select date and time"
+                  label="Effective from"
+                  enableTime
                   value={effectiveFrom}
-                  onChange={(event) => setEffectiveFrom(event.target.value)}
+                  onChange={setEffectiveFrom}
+                  hint="Leave blank to use now"
                 />
               </div>
               <div className="sm:col-span-2 flex justify-end">
