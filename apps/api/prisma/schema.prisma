@@ -18,6 +18,7 @@ model Business {
   fuelTypes          FuelType[]
   organizations      Organization[]
   cashDenominations  CashDenomination[]
+  paymentAccounts    PaymentAccount[]
 }
 
 model Branch {
@@ -214,6 +215,25 @@ model CashDenomination {
   @@index([businessId])
 }
 
+/// Configurable bank / online / card accounts for Feature 8 (not a hard-coded list).
+model PaymentAccount {
+  id         String        @id
+  businessId String
+  name       String
+  code       String
+  /// Maps to Payment.method for ledger compatibility (prefer BANK / CARD / TRANSFER for online).
+  kind       PaymentMethod
+  sortOrder  Int           @default(0)
+  active     Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  business   Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  payments   Payment[]
+
+  @@unique([businessId, code])
+  @@index([businessId])
+}
+
 model SellingRate {
   id            String   @id
   fuelTypeId    String
@@ -297,6 +317,7 @@ model Sale {
   organization   Organization? @relation(fields: [organizationId], references: [id])
   vehicle        Vehicle?      @relation(fields: [vehicleId], references: [id])
   lines          SaleLine[]
+  payments       Payment[]
 
   @@index([stationId, soldAt])
   @@index([organizationId, soldAt])
@@ -390,20 +411,28 @@ model InventoryMovement {
 }
 
 model Payment {
-  id             String        @id
-  stationId      String
-  organizationId String?
-  amount         Decimal       @db.Decimal(14, 2)
-  method         PaymentMethod
-  reference      String?
-  paidAt         DateTime
-  notes          String?
-  createdBy      String
-  createdAt      DateTime      @default(now())
-  station        Station       @relation(fields: [stationId], references: [id])
-  organization   Organization? @relation(fields: [organizationId], references: [id])
+  id               String          @id
+  stationId        String
+  organizationId   String?
+  paymentAccountId String?
+  saleId           String?
+  amount           Decimal         @db.Decimal(14, 2)
+  /// Slip / transaction count on the paper “Qty” column (default 1).
+  quantity         Decimal         @default(1) @db.Decimal(14, 3)
+  method           PaymentMethod
+  reference        String?
+  paidAt           DateTime
+  notes            String?
+  createdBy        String
+  createdAt        DateTime        @default(now())
+  station          Station         @relation(fields: [stationId], references: [id])
+  organization     Organization?   @relation(fields: [organizationId], references: [id])
+  paymentAccount   PaymentAccount? @relation(fields: [paymentAccountId], references: [id])
+  sale             Sale?           @relation(fields: [saleId], references: [id])
 
   @@index([organizationId, paidAt])
+  @@index([stationId, paidAt])
+  @@index([paymentAccountId])
 }
 
 model Expense {

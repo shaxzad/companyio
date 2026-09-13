@@ -41,5 +41,13 @@ export type {
   CreditSaleLine,
   LedgerEntry,
 } from './credit';
+export type {
+  CreatePaymentAccountInput,
+  CreatePaymentInput,
+  PaymentAccount,
+  PaymentMethodKind,
+  PaymentRow,
+  PaymentsSummary,
+} from './payment';
 export type { ApiErrorBody } from './apiError';
 export { ApiError, isApiError, parseApiErrorBody } from './apiError';

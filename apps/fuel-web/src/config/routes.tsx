@@ -28,6 +28,7 @@ import VehiclesPage from '../features/companies/VehiclesPage';
 import CreditSalePage from '../features/credit/CreditSalePage';
 import CreditInvoicePage from '../features/credit/CreditInvoicePage';
 import CompanyLedgerPage from '../features/credit/CompanyLedgerPage';
+import PaymentsPage from '../features/payments/PaymentsPage';
 
 /**
  * Fuel app route modules — single source of truth for React Router + sidebar.
@@ -176,32 +177,9 @@ export const fuelRoutes: AppRouteModule[] = [
   },
   {
     key: 'payments',
-    name: 'Payments',
+    name: 'Online payments',
     path: '/payments',
-    element: (
-      <FuelRecordPage
-        title="Payments"
-        description="Record customer payments and reconcile outstanding organization balances."
-        endpoint="/fuel/payments"
-        fields={[
-          { name: 'stationId', label: 'Station', required: true },
-          { name: 'organizationId', label: 'Organization', required: true },
-          { name: 'amount', label: 'Amount', type: 'number', required: true },
-          {
-            name: 'method',
-            label: 'Payment method',
-            required: true,
-            options: [
-              { value: 'CASH', label: 'Cash' },
-              { value: 'BANK', label: 'Bank' },
-              { value: 'CARD', label: 'Card' },
-              { value: 'TRANSFER', label: 'Transfer' },
-            ],
-          },
-          { name: 'reference', label: 'Reference' },
-        ]}
-      />
-    ),
+    element: <PaymentsPage />,
     group: 'sales-credit',
     groupName: 'Sales & Credit',
     groupIcon: <DollarLineIcon />,

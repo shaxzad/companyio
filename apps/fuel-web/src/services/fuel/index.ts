@@ -9,4 +9,5 @@ export * from './opening';
 export * from './meterSales';
 export * from './receiving';
 export * from './credit';
+export * from './payments';
 export * from './records';

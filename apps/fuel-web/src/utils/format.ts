@@ -26,6 +26,23 @@ export const formatLitres = (value: number) => `${value.toLocaleString()} L`;
 export const todayYmd = () =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(new Date());
 
+/**
+ * Build an ISO timestamp for a business calendar day in Asia/Karachi.
+ * Uses the current clock time-of-day on that YMD (or 12:00 if `atNoon`).
+ */
+export const businessDateTimeIso = (businessDateYmd: string, options?: { atNoon?: boolean }) => {
+  const nowParts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Karachi',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date());
+  const get = (type: string) => nowParts.find((part) => part.type === type)?.value ?? '00';
+  const time = options?.atNoon ? '12:00:00' : `${get('hour')}:${get('minute')}:${get('second')}`;
+  return new Date(`${businessDateYmd}T${time}+05:00`).toISOString();
+};
+
 
 export const emptyRecord = (): Record<string, string> => ({});
 

@@ -151,7 +151,26 @@ Do not use the browser’s plain `dd/mm/yyyy` box — the app uses a shared date
 2. Enter **meter sales** as the day runs  
 3. Enter **tanker receiving** when a tanker arrives  
 4. Enter **credit sales** when a company takes fuel on udhaar  
-5. (Later features) online payments, expenses, cash count, closing  
+5. Enter **credit sales** when a company takes fuel on udhaar  
+6. Enter **online payments** (bank / card) as they arrive  
+7. (Later features) expenses, cash count, closing  
+
+---
+
+## 8. Online payments
+
+Bank / card / online receipts — **not** physical cash (cash counting is a later feature).
+
+### How it works
+Staff record money received into configurable accounts (JazzCash, bank transfer, card, etc.). Daily and monthly totals feed later cash reconciliation (Feature 13). Linking a company is optional and reduces that company’s ledger outstanding when set.
+
+### How to use
+1. Open **Online payments**.
+2. Select **station** and **business date**.
+3. First time: Owner clicks **Load default accounts** (or **Add account** for JazzCash, etc.).
+4. Choose **Account**, enter **Qty** and **Amount**, optional company / reference / date-time.
+5. Click **Record payment**.
+6. Check **Daily total** and **Monthly total** at the top.
 
 ---
 

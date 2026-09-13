@@ -49,6 +49,13 @@ export const queryKeys = {
     sale: (saleId: string) => ['creditSale', saleId] as const,
     ledger: (organizationId: string) => ['companyLedger', organizationId] as const,
   },
+  payments: {
+    all: ['payments'] as const,
+    accounts: (includeInactive = false, onlineOnly = false) =>
+      ['paymentAccounts', { includeInactive, onlineOnly }] as const,
+    summary: (stationId: string, businessDate: string) =>
+      ['paymentsSummary', stationId, businessDate] as const,
+  },
   users: {
     all: ['users'] as const,
     detail: (userId: string) => ['users', userId] as const,
