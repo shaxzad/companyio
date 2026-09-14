@@ -5,6 +5,7 @@ import { AuthClient, createBrowserStorage } from '@companyio/auth-client';
 import { AuthProvider } from '@companyio/auth-react';
 import 'swiper/css/bundle';
 import 'flatpickr/dist/flatpickr.css';
+import '@companyio/platform-ui/styles.css';
 import App from './App.tsx';
 
 const authClient = new AuthClient({

@@ -3,10 +3,14 @@ layer(base);
 
 @import 'tailwindcss';
 
+/* Monorepo apps (paths no-op when the package is installed from npm) */
 @source '../../apps/admin/src';
 @source '../../apps/web/src';
 @source '../../apps/desktop/src';
+
+/* Local workspace: scan TSX sources. Published tarball: scan built JS (src is not published). */
 @source '../src';
+@source '../dist';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
