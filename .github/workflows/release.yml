@@ -75,7 +75,7 @@ jobs:
           git push origin HEAD:main
 
       - name: Build packages
-        run: pnpm --filter "./packages/**" run build
+        run: pnpm -r --filter "./packages/**" run build
 
       - name: Verify publish tarballs include dist
         run: |
@@ -87,7 +87,8 @@ jobs:
               continue
             fi
             echo "Checking $name"
-            (cd "$pkg" && npm pack --dry-run) | tee /tmp/pack-list.txt
+            # npm pack prints the file list on stderr
+            (cd "$pkg" && npm pack --dry-run 2>&1) | tee /tmp/pack-list.txt
             if ! grep -F 'dist/index.js' /tmp/pack-list.txt >/dev/null || ! grep -F 'dist/index.d.ts' /tmp/pack-list.txt >/dev/null; then
               echo "::error::$name tarball is missing dist/index.js or dist/index.d.ts"
               exit 1
