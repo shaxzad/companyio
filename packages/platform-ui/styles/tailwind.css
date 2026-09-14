@@ -5,7 +5,6 @@ layer(base);
 
 @source '../../apps/admin/src';
 @source '../../apps/web/src';
-@source '../../apps/fuel-web/src';
 @source '../../apps/desktop/src';
 @source '../src';
 

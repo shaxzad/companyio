@@ -15,11 +15,11 @@ Every reusable presentational / layout / form / feedback component for product a
 - Add new shared UI under `packages/platform-ui/src/components/ui/` (or existing form/layout folders when that matches the pattern).
 - Export it from `packages/platform-ui/src/index.tsx`.
 - Rebuild the package (`pnpm --filter @companyio/platform-ui build`) before apps consume new exports.
-- Apps (`fuel-web`, `web`, `admin`, …) only **compose** these primitives in `features/` / `pages/`.
+- Apps (`web`, `admin`, `desktop`, …) only **compose** these primitives in `features/` / `pages/`.
 
 ## Do not do this
 
-- Do **not** create `apps/fuel-web/src/ui/` (or similar) for shared page shells, toasts, buttons, tables, dialogs, date pickers, form fields, etc.
+- Do **not** create `apps/*/src/ui/` for shared page shells, toasts, buttons, tables, dialogs, date pickers, form fields, etc.
 - Do **not** duplicate `DataTable`, `FormField`, `ConfirmDialog`, `DatePicker`, `Modal`, `PageShell`, `toast`, action button classes, etc. inside an app.
 - Do **not** put reusable UI under `apps/*/src/components` unless it is truly one-app-only and cannot be shared — prefer platform-ui by default.
 
