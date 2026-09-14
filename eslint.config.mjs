@@ -1,7 +1,9 @@
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 
-const projectRoot = process.cwd();
+const tsconfigRootDir = dirname(fileURLToPath(import.meta.url));
 
 export default [
   {
@@ -12,8 +14,8 @@ export default [
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        project: ['./tsconfig.json'],
-        tsconfigRootDir: projectRoot,
+        projectService: true,
+        tsconfigRootDir,
         ecmaVersion: 2020,
         sourceType: 'module',
       },

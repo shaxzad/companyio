@@ -1,12 +1,19 @@
 import { FormEvent, useState } from 'react';
 import { AuthClient } from '@companyio/auth-client';
+import { authErrorMessage } from '@companyio/auth-contracts';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from '../../icons';
 import Label from '../form/Label';
 import Input from '../form/input/InputField';
 import Checkbox from '../form/input/Checkbox';
 
-export default function SignUpForm({ client }: { client: AuthClient }) {
+export default function SignUpForm({
+  client,
+  businessName = 'Interview Copilot',
+}: {
+  client: AuthClient;
+  businessName?: string;
+}) {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [firstName, setFirstName] = useState('');
@@ -26,11 +33,11 @@ export default function SignUpForm({ client }: { client: AuthClient }) {
         name: `${firstName} ${lastName}`.trim(),
         email,
         password,
-        businessName: 'Interview Copilot',
+        businessName,
       });
       navigate('/', { replace: true });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+      setError(authErrorMessage(caught, 'Unable to create the account.'));
     } finally {
       setIsSubmitting(false);
     }

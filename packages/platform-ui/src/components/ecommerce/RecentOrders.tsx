@@ -1,5 +1,5 @@
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../ui/table';
-import Badge from '../ui/badge/Badge';
+import { Badge } from '../ui/badge';
 
 // Define the TypeScript interface for the table rows
 interface Product {
@@ -175,7 +175,7 @@ export default function RecentOrders() {
                 <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                   <Badge
                     size="sm"
-                    color={
+                    variant={
                       product.status === 'Delivered'
                         ? 'success'
                         : product.status === 'Pending'

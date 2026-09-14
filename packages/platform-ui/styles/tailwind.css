@@ -3,10 +3,10 @@ layer(base);
 
 @import 'tailwindcss';
 
-@source '../apps/admin/src';
-@source '../apps/web/src';
-@source '../apps/desktop/src';
-@source '../packages/platform-ui/src';
+@source '../../apps/admin/src';
+@source '../../apps/web/src';
+@source '../../apps/desktop/src';
+@source '../src';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -159,6 +159,27 @@ layer(base);
 
   --drop-shadow-4xl: 0 35px 35px rgba(0, 0, 0, 0.25), 0 45px 65px rgba(0, 0, 0, 0.15);
 
+  /* shadcn semantic colors — mapped onto existing brand/gray tokens; do not replace brand-* */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
   --z-index-1: 1;
   --z-index-9: 9;
   --z-index-99: 99;
@@ -166,6 +187,51 @@ layer(base);
   --z-index-9999: 9999;
   --z-index-99999: 99999;
   --z-index-999999: 999999;
+}
+
+/* shadcn CSS variables — same hex as brand/gray tokens above; unused until layout migration */
+:root {
+  --background: #ffffff;
+  --foreground: #101828;
+  --card: #ffffff;
+  --card-foreground: #101828;
+  --popover: #ffffff;
+  --popover-foreground: #101828;
+  --primary: #465fff;
+  --primary-foreground: #ffffff;
+  --secondary: #f9fafb;
+  --secondary-foreground: #344054;
+  --muted: #f2f4f7;
+  --muted-foreground: #667085;
+  --accent: #f2f4f7;
+  --accent-foreground: #101828;
+  --destructive: #f04438;
+  --destructive-foreground: #ffffff;
+  --border: #e4e7ec;
+  --input: #d0d5dd;
+  --ring: #9cb9ff;
+}
+
+.dark {
+  --background: #101828;
+  --foreground: #ffffff;
+  --card: #1a2231;
+  --card-foreground: #ffffff;
+  --popover: #1a2231;
+  --popover-foreground: #ffffff;
+  --primary: #465fff;
+  --primary-foreground: #ffffff;
+  --secondary: #1d2939;
+  --secondary-foreground: #f2f4f7;
+  --muted: #1d2939;
+  --muted-foreground: #98a2b3;
+  --accent: #1d2939;
+  --accent-foreground: #ffffff;
+  --destructive: #f04438;
+  --destructive-foreground: #ffffff;
+  --border: #1d2939;
+  --input: #344054;
+  --ring: #465fff;
 }
 
 /*
@@ -194,7 +260,7 @@ layer(base);
 }
 
 @utility menu-item {
-  @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm;
+  @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm transition-colors duration-150;
 }
 
 @utility menu-item-active {
@@ -236,7 +302,7 @@ layer(base);
 }
 
 @utility menu-dropdown-item {
-  @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-theme-sm font-medium;
+  @apply relative flex items-center gap-3 rounded-lg px-3 py-2 text-theme-sm font-medium transition-colors duration-150;
 }
 
 @utility menu-dropdown-item-active {

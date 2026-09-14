@@ -1,32 +1,45 @@
+import { useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
+import { cn } from '../lib/utils';
 
 import { SidebarProvider, useSidebar } from '../context/SidebarContext';
 import AppHeader from './AppHeader';
 import AppSidebar from './AppSidebar';
 import Backdrop from './Backdrop';
-import type { SidebarConfig } from './types';
+import { filterSidebarItems, type SidebarConfig } from './types';
 
-type AppLayoutProps = {
+export type AppLayoutProps = {
   config: SidebarConfig;
 };
 
 const LayoutContent: React.FC<AppLayoutProps> = ({ config }) => {
-  const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+  const { isExpanded, isMobileOpen } = useSidebar();
+
+  const sidebarConfig = useMemo<SidebarConfig>(
+    () => ({
+      ...config,
+      navItems: filterSidebarItems(config.navItems, config.permissions),
+      othersItems: filterSidebarItems(config.othersItems ?? [], config.permissions),
+    }),
+    [config]
+  );
 
   return (
     <div className="min-h-screen xl:flex">
       <div>
-        <AppSidebar config={config} />
+        <AppSidebar config={sidebarConfig} />
         <Backdrop />
       </div>
       <div
-        className={`flex-1 transition-all duration-300 ease-in-out ${
-          isExpanded || isHovered ? 'lg:ml-[290px]' : 'lg:ml-[90px]'
-        } ${isMobileOpen ? 'ml-0' : ''}`}
+        className={cn(
+          'flex-1 transition-[margin] duration-300 ease-in-out',
+          isExpanded ? 'lg:ms-[260px]' : 'lg:ms-[72px]',
+          isMobileOpen && 'ms-0'
+        )}
       >
-        <AppHeader />
+        <AppHeader config={config.header} projectDetails={config.projectDetails} />
 
-        <div className="mx-auto max-w-(--breakpoint-2xl) p-4 md:p-6">
+        <div className={cn('mx-auto max-w-(--breakpoint-2xl) p-5 md:p-8', config.contentClassName)}>
           <Outlet />
         </div>
       </div>
