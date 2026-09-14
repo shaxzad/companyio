@@ -385,3 +385,5 @@ pnpm --filter @companyio/auth-react dev
 - `pnpm test` - Run all tests
 - `pnpm lint` - Lint all code
 - `pnpm format` - Format all code with Prettier
+
+The Fuel Management web app now lives in a separate repository (`../fuel-web`) and uses npm. This monorepo still hosts the API it calls (`apps/api`).

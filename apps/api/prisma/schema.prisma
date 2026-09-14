@@ -8,12 +8,17 @@ datasource db {
 }
 
 model Business {
-  id        String   @id
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  branches  Branch[]
-  users     User[]   @relation("UserBusiness")
+  id            String         @id
+  name          String
+  slug          String         @unique
+  createdAt     DateTime       @default(now())
+  branches      Branch[]
+  users         User[]         @relation("UserBusiness")
+  stations           Station[]
+  fuelTypes          FuelType[]
+  organizations      Organization[]
+  cashDenominations  CashDenomination[]
+  paymentAccounts    PaymentAccount[]
 }
 
 model Branch {
@@ -27,11 +32,20 @@ model Branch {
   @@index([main_business_id])
 }
 
+enum UserRole {
+  owner
+  manager
+  staff
+  accountant
+}
+
 model User {
   id               String    @id
   email            String    @unique
   name             String
   passwordHash     String
+  role             UserRole  @default(owner)
+  isActive         Boolean   @default(true)
   firstName        String?
   lastName         String?
   phone            String?
@@ -61,4 +75,475 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+enum FuelUnit {
+  LITRE
+}
+
+enum SaleType {
+  CASH
+  CARD
+  CREDIT
+}
+
+enum PaymentMethod {
+  CASH
+  BANK
+  CARD
+  TRANSFER
+}
+
+enum RecordStatus {
+  DRAFT
+  CONFIRMED
+  VOIDED
+}
+
+model Station {
+  id         String         @id
+  businessId String
+  name       String
+  code       String
+  address    String?
+  city       String?
+  logoUrl    String?
+  timezone   String         @default("Asia/Karachi")
+  active     Boolean        @default(true)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  business   Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  tanks      Tank[]
+  pumps      Pump[]
+  sales      Sale[]
+  receipts   FuelReceipt[]
+  expenses   Expense[]
+  payments     Payment[]
+  closings     DailyClosing[]
+  businessDays BusinessDay[]
+
+  @@unique([businessId, code])
+  @@index([businessId])
+}
+
+model FuelType {
+  id            String              @id
+  businessId    String
+  name          String
+  code          String
+  unit          FuelUnit            @default(LITRE)
+  sellingPrice  Decimal             @db.Decimal(14, 2)
+  purchasePrice Decimal             @db.Decimal(14, 2)
+  minimumStock  Decimal             @db.Decimal(14, 3)
+  reorderLevel  Decimal             @db.Decimal(14, 3)
+  active        Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  business      Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  tanks         Tank[]
+  nozzles       Nozzle[]
+  saleLines     SaleLine[]
+  receiptLines  ReceiptLine[]
+  movements     InventoryMovement[]
+  sellingRates  SellingRate[]
+
+  @@unique([businessId, code])
+  @@index([businessId])
+}
+
+model Tank {
+  id           String              @id
+  stationId    String
+  fuelTypeId   String
+  name         String
+  capacity     Decimal             @db.Decimal(14, 3)
+  openingStock Decimal             @default(0) @db.Decimal(14, 3)
+  currentStock Decimal             @default(0) @db.Decimal(14, 3)
+  active       Boolean             @default(true)
+  station      Station             @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  fuelType     FuelType            @relation(fields: [fuelTypeId], references: [id])
+  movements    InventoryMovement[]
+  receiptLines    ReceiptLine[]
+  nozzles         Nozzle[]
+  businessDayRows BusinessDayTank[]
+
+  @@index([stationId])
+  @@index([fuelTypeId])
+}
+
+model Pump {
+  id        String   @id
+  stationId String
+  number    String
+  name      String
+  active    Boolean  @default(true)
+  station   Station  @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  nozzles   Nozzle[]
+
+  @@unique([stationId, number])
+}
+
+model Nozzle {
+  id           String     @id
+  pumpId       String
+  fuelTypeId   String
+  tankId       String?
+  number       String
+  openingMeter Decimal    @default(0) @db.Decimal(14, 3)
+  currentMeter Decimal    @default(0) @db.Decimal(14, 3)
+  active       Boolean    @default(true)
+  pump         Pump       @relation(fields: [pumpId], references: [id], onDelete: Cascade)
+  fuelType     FuelType   @relation(fields: [fuelTypeId], references: [id])
+  tank            Tank?              @relation(fields: [tankId], references: [id])
+  saleLines       SaleLine[]
+  businessDayRows BusinessDayMeter[]
+
+  @@unique([pumpId, number])
+  @@index([tankId])
+}
+
+model CashDenomination {
+  id         String   @id
+  businessId String
+  value      Int
+  label      String?
+  sortOrder  Int      @default(0)
+  active     Boolean  @default(true)
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, value])
+  @@index([businessId])
+}
+
+/// Configurable bank / online / card accounts for Feature 8 (not a hard-coded list).
+model PaymentAccount {
+  id         String        @id
+  businessId String
+  name       String
+  code       String
+  /// Maps to Payment.method for ledger compatibility (prefer BANK / CARD / TRANSFER for online).
+  kind       PaymentMethod
+  sortOrder  Int           @default(0)
+  active     Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  business   Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  payments   Payment[]
+
+  @@unique([businessId, code])
+  @@index([businessId])
+}
+
+model SellingRate {
+  id            String   @id
+  fuelTypeId    String
+  sellingPrice  Decimal  @db.Decimal(14, 2)
+  effectiveFrom DateTime
+  createdAt     DateTime @default(now())
+  fuelType      FuelType @relation(fields: [fuelTypeId], references: [id], onDelete: Cascade)
+
+  @@index([fuelTypeId, effectiveFrom])
+}
+
+model Organization {
+  id            String         @id
+  businessId    String
+  name          String
+  contactName   String?
+  phone         String?
+  email         String?
+  address       String?
+  paymentTerms  String?
+  creditLimit   Decimal        @default(0) @db.Decimal(14, 2)
+  /// Starting receivable balance before tracked sales/payments (F7 ledger).
+  openingBalance Decimal       @default(0) @db.Decimal(14, 2)
+  /// Credit settlement style: daily, monthly, or both (F6).
+  creditType    CreditType     @default(BOTH)
+  billingDay    Int?
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  vehicles      Vehicle[]
+  sales         Sale[]
+  payments      Payment[]
+  notifications Notification[]
+
+  @@index([businessId])
+}
+
+enum CreditType {
+  DAILY
+  MONTHLY
+  BOTH
+}
+
+model Vehicle {
+  id             String       @id
+  organizationId String
+  registration   String
+  type           String?
+  makeModel      String?
+  driver         String?
+  notes          String?
+  active         Boolean      @default(true)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sales          Sale[]
+
+  @@unique([organizationId, registration])
+}
+
+model Sale {
+  id             String        @id
+  stationId      String
+  businessDayId  String?
+  organizationId String?
+  vehicleId      String?
+  saleNumber     String        @unique
+  /// Customer-facing invoice number for CREDIT sales (F7).
+  invoiceNumber  String?       @unique
+  /// Driver name captured at sale time (may differ from vehicle master).
+  driverName     String?
+  saleType       SaleType
+  status         RecordStatus  @default(CONFIRMED)
+  soldAt         DateTime
+  totalAmount    Decimal       @db.Decimal(14, 2)
+  totalLitres    Decimal       @db.Decimal(14, 3)
+  notes          String?
+  createdBy      String
+  createdAt      DateTime      @default(now())
+  station        Station       @relation(fields: [stationId], references: [id])
+  businessDay    BusinessDay?  @relation(fields: [businessDayId], references: [id])
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  vehicle        Vehicle?      @relation(fields: [vehicleId], references: [id])
+  lines          SaleLine[]
+  payments       Payment[]
+
+  @@index([stationId, soldAt])
+  @@index([organizationId, soldAt])
+  @@index([businessDayId])
+}
+
+model SaleLine {
+  id                 String   @id
+  saleId             String
+  fuelTypeId         String
+  nozzleId           String?
+  litres             Decimal  @db.Decimal(14, 3)
+  unitPrice          Decimal  @db.Decimal(14, 2)
+  amount             Decimal  @db.Decimal(14, 2)
+  openingMeter       Decimal? @db.Decimal(14, 3)
+  closingMeter       Decimal? @db.Decimal(14, 3)
+  rateOverrideReason String?
+  sale               Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  fuelType           FuelType @relation(fields: [fuelTypeId], references: [id])
+  nozzle             Nozzle?  @relation(fields: [nozzleId], references: [id])
+}
+
+enum AccessRateMode {
+  PURCHASE
+  SELLING
+}
+
+model FuelReceipt {
+  id                 String         @id
+  stationId          String
+  businessDayId      String?
+  supplier           String
+  tankerNumber       String?
+  invoiceNumber      String?
+  receivedAt         DateTime
+  expectedLitres     Decimal        @db.Decimal(14, 3)
+  actualLitres       Decimal        @db.Decimal(14, 3)
+  totalDip           Decimal?       @db.Decimal(14, 3)
+  receivedDip        Decimal?       @db.Decimal(14, 3)
+  accessLitres       Decimal        @default(0) @db.Decimal(14, 3)
+  shortageLitres     Decimal        @default(0) @db.Decimal(14, 3)
+  purchaseRate       Decimal        @db.Decimal(14, 2)
+  accessRateMode     AccessRateMode @default(PURCHASE)
+  accessRate         Decimal        @db.Decimal(14, 2)
+  fuelCost           Decimal        @db.Decimal(14, 2)
+  tankerTip          Decimal        @default(0) @db.Decimal(14, 2)
+  otherReceivingCost Decimal        @default(0) @db.Decimal(14, 2)
+  totalCost          Decimal        @db.Decimal(14, 2)
+  status             RecordStatus   @default(CONFIRMED)
+  notes              String?
+  createdBy          String
+  createdAt          DateTime       @default(now())
+  station            Station        @relation(fields: [stationId], references: [id])
+  businessDay        BusinessDay?   @relation(fields: [businessDayId], references: [id])
+  lines              ReceiptLine[]
+
+  @@unique([stationId, invoiceNumber])
+  @@index([stationId, receivedAt])
+  @@index([businessDayId])
+}
+
+model ReceiptLine {
+  id            String      @id
+  receiptId     String
+  fuelTypeId    String
+  tankId        String
+  litres        Decimal     @db.Decimal(14, 3)
+  purchasePrice Decimal     @db.Decimal(14, 2)
+  amount        Decimal     @db.Decimal(14, 2)
+  receipt       FuelReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  fuelType      FuelType    @relation(fields: [fuelTypeId], references: [id])
+  tank          Tank        @relation(fields: [tankId], references: [id])
+
+  @@index([tankId, receiptId])
+}
+
+model InventoryMovement {
+  id           String   @id
+  stationId    String
+  tankId       String
+  fuelTypeId   String
+  sourceType   String
+  sourceId     String
+  quantity     Decimal  @db.Decimal(14, 3)
+  balanceAfter Decimal  @db.Decimal(14, 3)
+  createdAt    DateTime @default(now())
+  tank         Tank     @relation(fields: [tankId], references: [id])
+  fuelType     FuelType @relation(fields: [fuelTypeId], references: [id])
+
+  @@index([stationId, fuelTypeId, createdAt])
+}
+
+model Payment {
+  id               String          @id
+  stationId        String
+  organizationId   String?
+  paymentAccountId String?
+  saleId           String?
+  amount           Decimal         @db.Decimal(14, 2)
+  /// Slip / transaction count on the paper “Qty” column (default 1).
+  quantity         Decimal         @default(1) @db.Decimal(14, 3)
+  method           PaymentMethod
+  reference        String?
+  paidAt           DateTime
+  notes            String?
+  createdBy        String
+  createdAt        DateTime        @default(now())
+  station          Station         @relation(fields: [stationId], references: [id])
+  organization     Organization?   @relation(fields: [organizationId], references: [id])
+  paymentAccount   PaymentAccount? @relation(fields: [paymentAccountId], references: [id])
+  sale             Sale?           @relation(fields: [saleId], references: [id])
+
+  @@index([organizationId, paidAt])
+  @@index([stationId, paidAt])
+  @@index([paymentAccountId])
+}
+
+model Expense {
+  id          String        @id
+  stationId   String
+  category    String
+  description String
+  amount      Decimal       @db.Decimal(14, 2)
+  method      PaymentMethod
+  spentAt     DateTime
+  reference   String?
+  createdBy   String
+  createdAt   DateTime      @default(now())
+  station     Station       @relation(fields: [stationId], references: [id])
+
+  @@index([stationId, spentAt])
+}
+
+enum BusinessDayStatus {
+  OPEN
+  CLOSED
+}
+
+model BusinessDay {
+  id             String             @id
+  stationId      String
+  businessDate   DateTime           @db.Date
+  status         BusinessDayStatus  @default(OPEN)
+  bbfCash        Decimal            @db.Decimal(14, 2)
+  openedAt       DateTime           @default(now())
+  openedBy       String
+  enteredAt      DateTime           @default(now())
+  overrideReason String?
+  closedAt       DateTime?
+  closedBy       String?
+  station        Station            @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  meters         BusinessDayMeter[]
+  tanks          BusinessDayTank[]
+  sales          Sale[]
+  receipts       FuelReceipt[]
+
+  @@unique([stationId, businessDate])
+  @@index([stationId, status])
+}
+
+model BusinessDayMeter {
+  id             String      @id
+  businessDayId  String
+  nozzleId       String
+  openingReading Decimal     @db.Decimal(14, 3)
+  closingReading Decimal?    @db.Decimal(14, 3)
+  businessDay    BusinessDay @relation(fields: [businessDayId], references: [id], onDelete: Cascade)
+  nozzle         Nozzle      @relation(fields: [nozzleId], references: [id])
+
+  @@unique([businessDayId, nozzleId])
+}
+
+model BusinessDayTank {
+  id            String      @id
+  businessDayId String
+  tankId        String
+  openingStock  Decimal     @db.Decimal(14, 3)
+  closingStock  Decimal?    @db.Decimal(14, 3)
+  businessDay   BusinessDay @relation(fields: [businessDayId], references: [id], onDelete: Cascade)
+  tank          Tank        @relation(fields: [tankId], references: [id])
+
+  @@unique([businessDayId, tankId])
+}
+
+model DailyClosing {
+  id             String   @id
+  stationId      String
+  businessDate   DateTime
+  openingCash    Decimal  @db.Decimal(14, 2)
+  actualCash     Decimal  @db.Decimal(14, 2)
+  expectedCash   Decimal  @db.Decimal(14, 2)
+  cashDifference Decimal  @db.Decimal(14, 2)
+  notes          String?
+  closedBy       String
+  closedAt       DateTime @default(now())
+  station        Station  @relation(fields: [stationId], references: [id])
+
+  @@unique([stationId, businessDate])
+}
+
+model AuditLog {
+  id         String   @id
+  businessId String
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  @@index([businessId, createdAt])
+  @@index([entityType, entityId])
+}
+
+model Notification {
+  id             String        @id
+  organizationId String?
+  type           String
+  recipient      String
+  subject        String
+  payload        Json
+  status         String        @default("PENDING")
+  sentAt         DateTime?
+  failureReason  String?
+  createdAt      DateTime      @default(now())
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  @@index([status, createdAt])
 }

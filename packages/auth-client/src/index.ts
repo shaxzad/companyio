@@ -2,15 +2,19 @@ import {
   AuthClientConfig,
   AuthError,
   AuthSession,
+  CreateManagedUserInput,
+  CreateManagedUserSchema,
   Organization,
   SignInInput,
   SignUpInput,
+  UpdateManagedUserInput,
+  UpdateManagedUserSchema,
   UpdateProfileInput,
   UpdateProfileSchema,
-  SessionSchema,
   TokenStorage,
   User,
-  UserSchema,
+  parseSession,
+  parseUser,
 } from '@companyio/auth-contracts';
 
 const memoryStorage = (): TokenStorage => {
@@ -73,7 +77,7 @@ export class AuthClient {
 
     try {
       const session = await this.request<AuthSession>('/auth/session', { method: 'GET' });
-      this.setSession(SessionSchema.parse(session));
+      this.setSession(parseSession(session));
       return this.sessionValue;
     } catch {
       try {
@@ -98,7 +102,7 @@ export class AuthClient {
   }
 
   async signInWithPassword(input: SignInInput): Promise<AuthSession> {
-    const session = SessionSchema.parse(
+    const session = parseSession(
       await this.request<AuthSession>('/auth/sign-in', {
         method: 'POST',
         body: JSON.stringify(input),
@@ -109,7 +113,7 @@ export class AuthClient {
   }
 
   async signUp(input: SignUpInput): Promise<AuthSession> {
-    const session = SessionSchema.parse(
+    const session = parseSession(
       await this.request<AuthSession>('/auth/sign-up', {
         method: 'POST',
         body: JSON.stringify(input),
@@ -120,7 +124,7 @@ export class AuthClient {
   }
 
   async completeSignIn(code: string, redirectUri: string): Promise<AuthSession> {
-    const session = SessionSchema.parse(
+    const session = parseSession(
       await this.request<AuthSession>('/auth/callback', {
         method: 'POST',
         body: JSON.stringify({ clientId: this.clientId, code, redirectUri }),
@@ -131,7 +135,7 @@ export class AuthClient {
   }
 
   async getCurrentUser(): Promise<User> {
-    return UserSchema.parse(await this.request<User>('/users/me'));
+    return parseUser(await this.request<User>('/users/me'));
   }
 
   async updateProfile(input: UpdateProfileInput): Promise<User> {
@@ -139,12 +143,35 @@ export class AuthClient {
       method: 'PATCH',
       body: JSON.stringify(UpdateProfileSchema.parse(input)),
     });
-    this.setSession(SessionSchema.parse(response.session));
-    return UserSchema.parse(response.user);
+    this.setSession(parseSession(response.session));
+    return parseUser(response.user);
   }
 
   async getOrganizations(): Promise<Organization[]> {
     return this.request<Organization[]>('/organizations');
+  }
+
+  async listUsers(): Promise<User[]> {
+    const users = await this.request<User[]>('/users');
+    return users.map((user) => parseUser(user));
+  }
+
+  async createUser(input: CreateManagedUserInput): Promise<User> {
+    return parseUser(
+      await this.request<User>('/users', {
+        method: 'POST',
+        body: JSON.stringify(CreateManagedUserSchema.parse(input)),
+      })
+    );
+  }
+
+  async updateUser(id: string, input: UpdateManagedUserInput): Promise<User> {
+    return parseUser(
+      await this.request<User>(`/users/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(UpdateManagedUserSchema.parse(input)),
+      })
+    );
   }
 
   async signOut(): Promise<void> {
@@ -170,8 +197,8 @@ export class AuthClient {
       response = await this.requestFetch(`${this.baseUrl}${path}`, {
         ...init,
         headers: {
-          'Content-Type': 'application/json',
           'X-Client-Id': this.clientId,
+          ...(init.body ? { 'Content-Type': 'application/json' } : {}),
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...init.headers,
         },

@@ -1,9 +1,9 @@
 import type { ProfileCardProps } from './types';
 import { useModal } from '../../hooks/useModal';
 import { Modal } from '../ui/modal';
-import Button from '../ui/button/Button';
-import Input from '../form/input/InputField';
-import Label from '../form/Label';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 
 const links = [
   ['facebookUrl', 'Facebook'],
@@ -72,6 +72,7 @@ export default function UserMetaCard({ profile, onChange, onSave, isSaving }: Pr
                 <Label>{label}</Label>
                 <Input
                   type="url"
+                  placeholder={`Enter ${label} URL`}
                   value={profile[field]}
                   onChange={(event) => onChange(field, event.target.value)}
                 />
