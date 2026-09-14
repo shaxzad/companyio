@@ -1,9 +1,46 @@
 import { z } from 'zod';
 
+export const FUEL_ROLES = ['owner', 'manager', 'staff', 'accountant'] as const;
+export const FuelRoleSchema = z.enum(FUEL_ROLES);
+export type FuelRole = (typeof FUEL_ROLES)[number];
+
+export const ASSIGNABLE_FUEL_ROLES = ['manager', 'staff', 'accountant'] as const;
+export const AssignableFuelRoleSchema = z.enum(ASSIGNABLE_FUEL_ROLES);
+export type AssignableFuelRole = (typeof ASSIGNABLE_FUEL_ROLES)[number];
+
+export const isFuelRole = (value: unknown): value is FuelRole =>
+  typeof value === 'string' && (FUEL_ROLES as readonly string[]).includes(value);
+
+export const isOwnerRole = (role: FuelRole) => role === 'owner';
+export const canApprove = (role: FuelRole) => role === 'owner' || role === 'manager';
+
+export type User = {
+  id: string;
+  email: string;
+  name: string;
+  role: FuelRole;
+  isActive: boolean;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  bio?: string;
+  facebookUrl?: string;
+  xUrl?: string;
+  linkedinUrl?: string;
+  instagramUrl?: string;
+  main_business_id: string;
+  branch_id: string;
+  avatarUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export const UserSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   name: z.string().min(1),
+  role: FuelRoleSchema,
+  isActive: z.boolean(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   phone: z.string().optional(),
@@ -19,7 +56,39 @@ export const UserSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-export type User = z.infer<typeof UserSchema>;
+export const parseUser = (value: unknown): User => {
+  const parsed = UserSchema.parse(value);
+  if (!isFuelRole(parsed.role)) throw new Error('User role is required.');
+  return {
+    id: parsed.id,
+    email: parsed.email,
+    name: parsed.name,
+    role: parsed.role,
+    isActive: parsed.isActive === true,
+    ...(parsed.firstName ? { firstName: parsed.firstName } : {}),
+    ...(parsed.lastName ? { lastName: parsed.lastName } : {}),
+    ...(parsed.phone ? { phone: parsed.phone } : {}),
+    ...(parsed.bio ? { bio: parsed.bio } : {}),
+    ...(parsed.facebookUrl ? { facebookUrl: parsed.facebookUrl } : {}),
+    ...(parsed.xUrl ? { xUrl: parsed.xUrl } : {}),
+    ...(parsed.linkedinUrl ? { linkedinUrl: parsed.linkedinUrl } : {}),
+    ...(parsed.instagramUrl ? { instagramUrl: parsed.instagramUrl } : {}),
+    main_business_id: parsed.main_business_id,
+    branch_id: parsed.branch_id,
+    ...(parsed.avatarUrl ? { avatarUrl: parsed.avatarUrl } : {}),
+    createdAt: parsed.createdAt,
+    updatedAt: parsed.updatedAt,
+  };
+};
+
+export type Organization = {
+  id: string;
+  name: string;
+  slug: string;
+  role: 'owner' | 'admin' | 'member';
+  main_business_id: string;
+  branch_id: string;
+};
 
 export const OrganizationSchema = z.object({
   id: z.string(),
@@ -30,7 +99,11 @@ export const OrganizationSchema = z.object({
   branch_id: z.string().min(1),
 });
 
-export type Organization = z.infer<typeof OrganizationSchema>;
+export type AuthSession = {
+  accessToken: string;
+  expiresAt: number;
+  user: User;
+};
 
 export const SessionSchema = z.object({
   accessToken: z.string().min(1),
@@ -38,7 +111,14 @@ export const SessionSchema = z.object({
   user: UserSchema,
 });
 
-export type AuthSession = z.infer<typeof SessionSchema>;
+export const parseSession = (value: unknown): AuthSession => {
+  const parsed = SessionSchema.parse(value);
+  return {
+    accessToken: parsed.accessToken,
+    expiresAt: parsed.expiresAt,
+    user: parseUser(parsed.user),
+  };
+};
 
 export type AuthErrorCode =
   'UNAUTHENTICATED' | 'FORBIDDEN' | 'INVALID_REQUEST' | 'NETWORK_ERROR' | 'UNKNOWN';
@@ -49,6 +129,13 @@ export type AuthError = {
   status?: number;
 };
 
+export type SignUpInput = {
+  name: string;
+  email: string;
+  password: string;
+  businessName: string;
+};
+
 export const SignUpSchema = z.object({
   name: z.string().min(1).max(80),
   email: z.string().email(),
@@ -56,14 +143,29 @@ export const SignUpSchema = z.object({
   businessName: z.string().min(1).max(120),
 });
 
-export type SignUpInput = z.infer<typeof SignUpSchema>;
+export type SignInInput = {
+  email: string;
+  password: string;
+};
 
 export const SignInSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
 
-export type SignInInput = z.infer<typeof SignInSchema>;
+export type UpdateProfileInput = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  bio: string;
+  facebookUrl: string;
+  xUrl: string;
+  linkedinUrl: string;
+  instagramUrl: string;
+  main_business_id: string;
+  branch_id: string;
+};
 
 export const UpdateProfileSchema = z.object({
   firstName: z.string().min(1).max(80),
@@ -78,8 +180,6 @@ export const UpdateProfileSchema = z.object({
   main_business_id: z.string().min(1),
   branch_id: z.string().min(1),
 });
-
-export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
 
 export type AuthClientConfig = {
   baseUrl: string;
@@ -100,9 +200,56 @@ export type AuthApi = {
   organizations: Organization[];
 };
 
+export type CreateInvitation = {
+  email: string;
+  role: 'admin' | 'member';
+};
+
 export const CreateInvitationSchema = z.object({
   email: z.string().email(),
   role: z.enum(['admin', 'member']).default('member'),
 });
 
-export type CreateInvitation = z.infer<typeof CreateInvitationSchema>;
+export type CreateManagedUserInput = {
+  name: string;
+  email: string;
+  password: string;
+  role: AssignableFuelRole;
+};
+
+export const CreateManagedUserSchema = z.object({
+  name: z.string().min(1).max(80),
+  email: z.string().email(),
+  password: z.string().min(8).max(128),
+  role: AssignableFuelRoleSchema,
+});
+
+export type UpdateManagedUserInput = {
+  name?: string;
+  email?: string;
+  password?: string;
+  role?: AssignableFuelRole;
+  isActive?: boolean;
+};
+
+export const UpdateManagedUserSchema = z.object({
+  name: z.string().min(1).max(80).optional(),
+  email: z.string().email().optional(),
+  password: z.string().min(8).max(128).optional(),
+  role: AssignableFuelRoleSchema.optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const authErrorMessage = (caught: unknown, fallback = 'The request could not be completed.') => {
+  if (
+    caught &&
+    typeof caught === 'object' &&
+    'message' in caught &&
+    typeof caught.message === 'string' &&
+    caught.message.length > 0
+  ) {
+    return caught.message;
+  }
+  if (caught instanceof Error && caught.message) return caught.message;
+  return fallback;
+};

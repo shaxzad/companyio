@@ -1,62 +1,65 @@
-import type { SidebarConfig } from '@companyio/platform-ui';
+import {
+  buildSidebarFromRoutes,
+  type HeaderUser,
+  type SidebarConfig,
+} from '@companyio/platform-ui';
+import type { FuelRole } from '@companyio/auth-contracts';
 
-import { BoxCubeIcon, DollarLineIcon, GridIcon, UserCircleIcon } from '@companyio/platform-ui';
+import { canAccessPath } from '../features/auth/roles';
+import { fuelRoutes } from './routes';
 
-export const sidebarConfig: SidebarConfig = {
-  projectDetails: {
-    name: 'Fuel Management',
-    logo: '',
-    darkLogo: '',
-    collapsedLogo: '/images/logo/logo-icon.svg',
-    logoWidth: 150,
-    logoHeight: 40,
-  },
-  navItems: [
-    {
-      icon: <GridIcon />,
-      name: 'Dashboard',
-      subItems: [
-        {
-          name: 'Overview',
-          path: '/',
-        },
-      ],
-    },
-    {
-      icon: <DollarLineIcon />,
-      name: 'Sales & Credit',
-      subItems: [
-        { name: 'Daily sales', path: '/sales' },
-        { name: 'Fleet sales', path: '/fleet-sales' },
-        { name: 'Organizations', path: '/organizations' },
-        { name: 'Customers', path: '/customers' },
-        { name: 'Vehicles', path: '/vehicles' },
-        { name: 'Credit accounts', path: '/credit-accounts' },
-        { name: 'Payments', path: '/payments' },
-      ],
-    },
-    {
-      icon: <BoxCubeIcon />,
-      name: 'Operations',
-      subItems: [
-        { name: 'Inventory', path: '/inventory' },
-        { name: 'Fuel purchases', path: '/fuel-purchases' },
-        { name: 'Expenses', path: '/expenses' },
-        { name: 'Pumps & tanks', path: '/assets' },
-      ],
-    },
-    {
-      icon: <GridIcon />,
-      name: 'Reports',
-      path: '/reports',
-    },
-  ],
+const projectDetails: SidebarConfig['projectDetails'] = {
+  name: 'Fuel Management',
+  logo: '',
+  darkLogo: '',
+  collapsedLogo: '/images/logo/logo-icon.svg',
+  logoWidth: 150,
+  logoHeight: 40,
+  href: '/',
+};
 
-  othersItems: [
-    {
-      icon: <UserCircleIcon />,
-      name: 'User Profile',
-      path: '/profile',
-    },
+const headerBase: NonNullable<SidebarConfig['header']> = {
+  search: false,
+  showNotifications: true,
+  showThemeToggle: false,
+  showThemeInUserMenu: true,
+  avatarOnly: true,
+  notificationCount: 0,
+  userMenuItems: [
+    { key: 'settings', label: 'Settings', path: '/settings/pump' },
+    { key: 'profile', label: 'Profile', path: '/profile' },
   ],
 };
+
+/** Routes visible in the menu for a given fuel role (path access matrix). */
+const menuRoutesForRole = (role: FuelRole) =>
+  fuelRoutes.filter((route) => {
+    if (route.redirectTo) return false;
+    if (route.person || route.apply) return false;
+    return canAccessPath(role, route.path);
+  });
+
+export const sidebarForRole = (role: FuelRole, user?: HeaderUser): SidebarConfig => {
+  const { navItems, othersItems } = buildSidebarFromRoutes(menuRoutesForRole(role));
+
+  return {
+    projectDetails,
+    navItems,
+    othersItems,
+    header: {
+      ...headerBase,
+      ...(user
+        ? {
+            user: {
+              name: user.name,
+              email: user.email,
+              avatarUrl: user.avatarUrl,
+            },
+          }
+        : {}),
+    },
+  };
+};
+
+/** Static snapshot (owner-level) for demos / Storybook-style usage. */
+export const sidebarConfig: SidebarConfig = sidebarForRole('owner');

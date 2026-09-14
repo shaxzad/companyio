@@ -5,7 +5,17 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { PrismaClient, type User as DatabaseUser } from './generated/prisma/client.ts';
+import { z } from 'zod';
+import { registerCreditRoutes } from './credit-routes.ts';
 import { registerFuelRoutes } from './fuel-routes.ts';
+import { registerMasterDataRoutes } from './master-routes.ts';
+import { registerMeterSalesRoutes } from './meter-sales-routes.ts';
+import { registerOpeningRoutes } from './opening-routes.ts';
+import { registerOrganizationRoutes } from './organization-routes.ts';
+import { registerPaymentRoutes } from './payment-routes.ts';
+import { registerReceivingRoutes } from './receiving-routes.ts';
+import { registerUserRoutes } from './user-routes.ts';
+import { apiError, fromZodError } from './http-errors.ts';
 import {
   SignInSchema,
   SignUpSchema,
@@ -25,6 +35,34 @@ const scrypt = promisify(scryptCallback);
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: true });
 
+const requestLogError = (error: unknown) => {
+  app.log.error(error);
+};
+
+app.setErrorHandler((error, _request, reply) => {
+  if (error instanceof z.ZodError) {
+    return reply.code(400).send(fromZodError(error));
+  }
+
+  const statusCode =
+    typeof (error as { statusCode?: unknown }).statusCode === 'number'
+      ? (error as { statusCode: number }).statusCode
+      : 500;
+
+  if (statusCode >= 500) {
+    requestLogError(error);
+    return reply.code(500).send(apiError('Something went wrong.', { code: 'INTERNAL_ERROR' }));
+  }
+
+  const message =
+    typeof (error as { message?: unknown }).message === 'string' &&
+    (error as { message: string }).message.trim()
+      ? (error as { message: string }).message
+      : 'The request could not be completed.';
+
+  return reply.code(statusCode).send(apiError(message));
+});
+
 const hashPassword = async (password: string, salt = randomBytes(16).toString('hex')) => {
   const derivedKey = (await scrypt(password, salt, 64)) as Buffer;
   return `${salt}:${derivedKey.toString('hex')}`;
@@ -42,6 +80,8 @@ const publicUser = (record: DatabaseUser): AuthUser => ({
   id: record.id,
   email: record.email,
   name: record.name,
+  role: record.role,
+  isActive: record.isActive,
   ...(record.firstName ? { firstName: record.firstName } : {}),
   ...(record.lastName ? { lastName: record.lastName } : {}),
   ...(record.phone ? { phone: record.phone } : {}),
@@ -73,7 +113,7 @@ const getAuthenticatedUser = async (authorization?: string) => {
     where: { accessToken: token, expiresAt: { gt: new Date() } },
     include: { user: true },
   });
-  return session ? publicUser(session.user) : null;
+  return session?.user.isActive ? publicUser(session.user) : null;
 };
 
 app.get('/health', async () => ({ status: 'ok', timestamp: new Date() }));
@@ -117,6 +157,8 @@ app.post('/api/v1/auth/sign-up', async (request, reply) => {
           main_business_id: mainBusinessId,
           branch_id: branchId,
           passwordHash: await hashPassword(input.password),
+          role: 'owner',
+          isActive: true,
           createdAt: now,
           updatedAt: now,
         },
@@ -194,6 +236,8 @@ app.post('/api/v1/auth/sign-in', async (request, reply) => {
   const record = await prisma.user.findUnique({ where: { email: input.email.toLowerCase() } });
   if (!record || !(await verifyPassword(input.password, record.passwordHash)))
     return reply.code(401).send({ message: 'Email or password is incorrect.' });
+  if (!record.isActive)
+    return reply.code(403).send({ message: 'This account has been deactivated.' });
   return reply.send(await createSession(publicUser(record)));
 });
 
@@ -256,7 +300,15 @@ app.get('/api/v1/organizations', async (request, reply) => {
   );
 });
 
+registerUserRoutes(app, prisma, getAuthenticatedUser, publicUser, hashPassword);
 registerFuelRoutes(app, prisma, getAuthenticatedUser);
+registerOrganizationRoutes(app, prisma, getAuthenticatedUser);
+registerCreditRoutes(app, prisma, getAuthenticatedUser);
+registerPaymentRoutes(app, prisma, getAuthenticatedUser);
+registerMasterDataRoutes(app, prisma, getAuthenticatedUser);
+registerOpeningRoutes(app, prisma, getAuthenticatedUser);
+registerMeterSalesRoutes(app, prisma, getAuthenticatedUser);
+registerReceivingRoutes(app, prisma, getAuthenticatedUser);
 
 const start = async () => {
   try {

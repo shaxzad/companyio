@@ -9,23 +9,37 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./styles.css": "./styles/tailwind.css"
   },
   "files": [
     "dist",
+    "styles",
     "README.md"
+  ],
+  "sideEffects": [
+    "**/*.css",
+    "./src/index.tsx",
+    "./dist/index.js"
   ],
   "scripts": {
     "clean": "rm -rf dist",
     "generate-icons": "node scripts/generate-icons.mjs",
-    "build": "pnpm run clean && pnpm run generate-icons && tsc",
-    "test": "tsc --noEmit"
+    "build": "pnpm run clean && pnpm run generate-icons && tsc && cp src/index.css dist/index.css",
+    "test": "tsc --noEmit && vitest run"
   },
   "dependencies": {
     "@companyio/auth-client": "workspace:*",
     "@companyio/auth-contracts": "workspace:*",
     "@companyio/auth-react": "workspace:*",
     "@companyio/shared-types": "workspace:*",
+    "@radix-ui/react-avatar": "^1.1.10",
+    "@radix-ui/react-dropdown-menu": "^2.1.15",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-separator": "^1.1.7",
+    "@radix-ui/react-slot": "^1.2.3",
+    "class-variance-authority": "^0.7.1",
+    "lucide-react": "^0.511.0",
     "@fullcalendar/core": "^6.1.19",
     "@fullcalendar/daygrid": "^6.1.19",
     "@fullcalendar/interaction": "^6.1.19",
@@ -47,10 +61,14 @@
   "devDependencies": {
     "@svgr/cli": "^8.1.0",
     "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "react": "^18.2.0",
-    "typescript": "^5.3.3"
+    "react-dom": "^18.2.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.0"
   },
   "peerDependencies": {
-    "react": "^18.2.0 || ^19.0.0"
+    "react": "^18.2.0 || ^19.0.0",
+    "react-dom": "^18.2.0 || ^19.0.0"
   }
 }

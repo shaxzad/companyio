@@ -1,0 +1,20 @@
+---
+description: Fuel-web related selects and dropdown chevrons
+globs: apps/fuel-web/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Related selects and dropdown affordance
+
+Every select must look like a select: the shared `Select` from `@companyio/platform-ui` keeps a visible down-chevron. Do not use a plain `Input` for lookup fields (station, product/fuel type, tank, meter/nozzle, organization, vehicle, role). Empty or waiting states stay a **disabled Select** with a reason in the placeholder (`Select a fuel type first`), never a free-text box.
+
+Parent → child lists fill automatically from related data:
+
+- Fuel type / product → tanks (and later nozzles/meters) for that product
+- Organization → that organization’s vehicles
+- Station → that station’s tanks, pumps, and nozzles
+- Product on a nozzle form → tanks that store that product
+
+When the parent changes, clear the child if it no longer belongs. If exactly one child remains, select it. If the pump has only one station, select it so tanks can load without an extra click.
+
+Keep this pattern on later features (daily opening, multi-meter sales, receiving, credit, closing). Do not merge unrelated lists into one dropdown.

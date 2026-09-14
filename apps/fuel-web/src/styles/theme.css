@@ -1,0 +1,23 @@
+/**
+ * Fuel Management palette.
+ * Primary: #fb6514 · Neutrals: white / black (gray scale) · Status: error / success / warning tokens.
+ * Remaps shared `brand-*` (sidebar, focus rings, auth CTAs) away from blue for this app only.
+ */
+:root {
+  --color-brand-25: #fffaf5;
+  --color-brand-50: #fff6ed;
+  --color-brand-100: #ffead5;
+  --color-brand-200: #fddcab;
+  --color-brand-300: #feb273;
+  --color-brand-400: #fd853a;
+  --color-brand-500: #fb6514;
+  --color-brand-600: #ec4a0a;
+  --color-brand-700: #c4320a;
+  --color-brand-800: #9c2a10;
+  --color-brand-900: #7e2410;
+  --color-brand-950: #511c10;
+}
+
+html {
+  color-scheme: light dark;
+}

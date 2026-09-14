@@ -6,6 +6,8 @@ build/
 .env
 .env.local
 .env.*.local
+.env.development.local
+.env.example
 
 # IDE
 .vscode/

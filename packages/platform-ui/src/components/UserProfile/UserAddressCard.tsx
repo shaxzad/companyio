@@ -1,9 +1,9 @@
 import type { ProfileCardProps } from './types';
 import { useModal } from '../../hooks/useModal';
 import { Modal } from '../ui/modal';
-import Button from '../ui/button/Button';
-import Input from '../form/input/InputField';
-import Label from '../form/Label';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 
 export default function UserAddressCard({ profile, onChange, onSave, isSaving }: ProfileCardProps) {
   const { isOpen, openModal, closeModal } = useModal();
@@ -42,6 +42,7 @@ export default function UserAddressCard({ profile, onChange, onSave, isSaving }:
             <div>
               <Label>Main Business ID</Label>
               <Input
+                placeholder="Enter main business ID"
                 value={profile.main_business_id}
                 onChange={(event) => onChange('main_business_id', event.target.value)}
                 required
@@ -50,6 +51,7 @@ export default function UserAddressCard({ profile, onChange, onSave, isSaving }:
             <div>
               <Label>Branch ID</Label>
               <Input
+                placeholder="Enter branch ID"
                 value={profile.branch_id}
                 onChange={(event) => onChange('branch_id', event.target.value)}
                 required

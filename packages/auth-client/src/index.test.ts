@@ -5,6 +5,8 @@ const user = {
   id: 'user-1',
   email: 'person@example.com',
   name: 'Test Person',
+  role: 'owner' as const,
+  isActive: true,
   main_business_id: 'business-1',
   branch_id: 'branch-1',
   createdAt: new Date().toISOString(),
@@ -65,5 +67,39 @@ describe('AuthClient', () => {
     await expect(client.restore()).resolves.toBeNull();
     await expect(storage.get()).resolves.toBeNull();
     expect(client.session).toBeNull();
+  });
+
+  it('creates a staff user for the owner', async () => {
+    const created = {
+      ...user,
+      id: 'user-2',
+      email: 'cashier@example.com',
+      name: 'Cashier',
+      role: 'staff' as const,
+    };
+    const requestFetch: typeof fetch = vi.fn(
+      async () => new Response(JSON.stringify(created), { status: 201 })
+    );
+    const storage = createMemoryStorage();
+    await storage.set('token-1');
+    const client = new AuthClient({
+      baseUrl: 'http://localhost:3000',
+      clientId: 'test-client',
+      storage,
+      fetch: requestFetch,
+    });
+
+    await expect(
+      client.createUser({
+        name: 'Cashier',
+        email: 'cashier@example.com',
+        password: 'password123',
+        role: 'staff',
+      })
+    ).resolves.toEqual(created);
+    expect(requestFetch).toHaveBeenCalledWith(
+      'http://localhost:3000/api/v1/users',
+      expect.objectContaining({ method: 'POST' })
+    );
   });
 });

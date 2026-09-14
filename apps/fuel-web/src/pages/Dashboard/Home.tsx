@@ -1,9 +1,18 @@
-import { useEffect, useState } from 'react';
 import { PageMeta } from '@companyio/platform-ui';
-import { getFuelDashboard, type FuelDashboard } from '../../api/fuelApi';
-
-const formatMoney = (value: number) =>
-  `PKR ${value.toLocaleString('en-PK', { maximumFractionDigits: 0 })}`;
+import { useAuth } from '@companyio/auth-react';
+import { useDashboard } from '../../hooks';
+import { formatMoney, toErrorMessage } from '../../utils';
+import { canAccessPath, ROLE_LABELS, roleOf } from '../../features/auth/roles';
+import {
+  KpiCard,
+  LiveBadge,
+  Notice,
+  PageHeader,
+  PageShell,
+  QuickAction,
+  primaryActionClass,
+  surfaceClass,
+} from '../../ui/page';
 
 const activity = [
   {
@@ -11,58 +20,29 @@ const activity = [
     reference: 'ABC Construction · GLT-1234',
     amount: 'PKR 42,000',
     time: '10:42 AM',
-    tone: 'bg-orange-100 text-orange-700',
+    tone: 'bg-brand-100 text-brand-700',
   },
   {
     label: 'Fuel received',
     reference: 'Northern Fuels · Tanker GB-09',
     amount: '+8,000 L',
     time: '09:15 AM',
-    tone: 'bg-sky-100 text-sky-700',
+    tone: 'bg-brand-100 text-brand-700',
   },
   {
     label: 'Payment received',
     reference: 'Mountain Contractors',
     amount: 'PKR 85,000',
     time: '08:30 AM',
-    tone: 'bg-emerald-100 text-emerald-700',
+    tone: 'bg-success-100 text-success-700',
   },
 ];
 
-function QuickAction({
-  label,
-  description,
-  href,
-}: {
-  label: string;
-  description: string;
-  href: string;
-}) {
-  return (
-    <a
-      href={href}
-      className="group rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:border-orange-300 hover:bg-orange-50 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-orange-700 dark:hover:bg-orange-950/20"
-    >
-      <span className="flex items-center justify-between text-sm font-semibold text-gray-900 dark:text-white">
-        {label}
-        <span className="text-lg text-orange-500 transition-transform group-hover:translate-x-1">
-          →
-        </span>
-      </span>
-      <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">{description}</span>
-    </a>
-  );
-}
-
 export default function Home() {
-  const [dashboard, setDashboard] = useState<FuelDashboard | null>(null);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    getFuelDashboard()
-      .then(setDashboard)
-      .catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)));
-  }, []);
+  const { user } = useAuth();
+  const role = roleOf(user);
+  const { data: dashboard, error: dashboardError } = useDashboard();
+  const error = dashboardError ? toErrorMessage(dashboardError) : '';
 
   const kpis = dashboard
     ? [
@@ -70,25 +50,25 @@ export default function Home() {
           label: "Today's sales",
           value: formatMoney(dashboard.today.sales),
           detail: 'Confirmed station sales',
-          tone: 'text-emerald-600',
+          tone: 'text-success-600',
         },
         {
           label: 'Litres sold',
           value: `${dashboard.today.litres.toLocaleString()} L`,
           detail: 'Across all active nozzles',
-          tone: 'text-sky-600',
+          tone: 'text-brand-600',
         },
         {
           label: 'Fuel received',
           value: formatMoney(dashboard.today.receivedCost),
           detail: 'Confirmed receipts today',
-          tone: 'text-orange-600',
+          tone: 'text-brand-600',
         },
         {
           label: 'Credit outstanding',
           value: formatMoney(dashboard.today.creditOutstanding),
           detail: 'Organization balances',
-          tone: 'text-rose-600',
+          tone: 'text-error-600',
         },
       ]
     : [];
@@ -96,49 +76,27 @@ export default function Home() {
   return (
     <>
       <PageMeta title="Fuel Management Dashboard" description="Station operations overview" />
-      <div className="space-y-6 pb-8">
-        <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600">
-              Gilgit Station
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
-              Good morning, manager
-            </h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Today · Shift is open</p>
-          </div>
-          <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" /> Operations live
-          </div>
-        </header>
+      <PageShell>
+        <PageHeader
+          title={`Good morning${user?.name ? `, ${user.name.split(' ')[0]}` : ''}`}
+          description={`Signed in as ${role ? ROLE_LABELS[role] : 'user'} · Shift is open`}
+          action={<LiveBadge />}
+        />
 
-        {error && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            {error}
-          </div>
-        )}
+        {error && <Notice tone="warning">{error}</Notice>}
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {kpis.map((kpi) => (
-            <article
-              key={kpi.label}
-              className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900"
-            >
-              <p className="text-sm text-gray-500 dark:text-gray-400">{kpi.label}</p>
-              <p className="mt-3 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
-                {kpi.value}
-              </p>
-              <p className={`mt-2 text-xs font-medium ${kpi.tone}`}>{kpi.detail}</p>
-            </article>
+            <KpiCard key={kpi.label} {...kpi} />
           ))}
           {!dashboard && !error && (
-            <div className="col-span-full rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-900">
+            <div className={`col-span-full p-5 text-sm text-gray-500 ${surfaceClass}`}>
               Loading station figures...
             </div>
           )}
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-          <article className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+          <article className={`${surfaceClass} p-5`}>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="font-semibold text-gray-900 dark:text-white">Tank stock health</h2>
@@ -148,7 +106,7 @@ export default function Home() {
               </div>
               <a
                 href="/inventory"
-                className="text-xs font-semibold text-orange-600 hover:text-orange-700"
+                className="text-xs font-semibold text-brand-600 hover:text-brand-700"
               >
                 View ledger
               </a>
@@ -158,7 +116,7 @@ export default function Home() {
                 const percent = tank.capacity
                   ? Math.min(100, (tank.currentStock / tank.capacity) * 100)
                   : 0;
-                const colors = ['bg-orange-500', 'bg-sky-500', 'bg-amber-500'];
+                const colors = ['bg-brand-500', 'bg-brand-500', 'bg-amber-500'];
                 return (
                   <div key={tank.id}>
                     <div className="mb-2 flex items-center justify-between text-sm">
@@ -188,15 +146,15 @@ export default function Home() {
             </div>
           </article>
 
-          <article className="rounded-2xl border border-gray-200 bg-gray-950 p-5 text-white">
+          <article className={`${surfaceClass} bg-gray-950 p-5 text-white dark:bg-gray-950`}>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-400">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-400">
                   Shift control
                 </p>
                 <h2 className="mt-2 text-xl font-semibold">Morning shift</h2>
               </div>
-              <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-300">
+              <span className="rounded-full bg-success-500/15 px-2.5 py-1 text-xs font-medium text-success-300">
                 Open
               </span>
             </div>
@@ -214,10 +172,7 @@ export default function Home() {
               Complete closing after entering final meter readings, cash count, and stock
               reconciliation.
             </p>
-            <a
-              href="/sales"
-              className="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-400"
-            >
+            <a href="/sales" className={`mt-5 w-full ${primaryActionClass}`}>
               Continue shift
             </a>
           </article>
@@ -233,30 +188,41 @@ export default function Home() {
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <QuickAction
-              label="Record fuel sale"
-              description="Meters, nozzles, litres, and cash/card sale"
-              href="/sales"
-            />
-            <QuickAction
-              label="Fleet / credit sale"
-              description="Issue fuel to an organization vehicle"
-              href="/fleet-sales"
-            />
-            <QuickAction
-              label="Receive fuel"
-              description="Add a tanker delivery to inventory"
-              href="/receiving"
-            />
-            <QuickAction
-              label="Customer payment"
-              description="Post a payment against a balance"
-              href="/organizations"
-            />
+            {[
+              {
+                label: 'Open the day',
+                description: 'Business date, opening meters, tank stock, and BBF Cash',
+                href: '/opening',
+              },
+              {
+                label: 'Record fuel sale',
+                description: 'Closing meters, litres, and product totals',
+                href: '/sales',
+              },
+              {
+                label: 'Fleet / credit sale',
+                description: 'Issue fuel to an organization vehicle',
+                href: '/fleet-sales',
+              },
+              {
+                label: 'Receive fuel',
+                description: 'Tanker delivery, dips, Access, and tank stock',
+                href: '/receiving',
+              },
+              {
+                label: 'Customer payment',
+                description: 'Post a payment against a balance',
+                href: '/organizations',
+              },
+            ]
+              .filter((action) => !role || canAccessPath(role, action.href))
+              .map((action) => (
+                <QuickAction key={action.href} {...action} />
+              ))}
           </div>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <section className={surfaceClass}>
           <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800">
             <div>
               <h2 className="font-semibold text-gray-900 dark:text-white">Recent activity</h2>
@@ -264,7 +230,7 @@ export default function Home() {
                 Today at Gilgit Station
               </p>
             </div>
-            <button className="text-xs font-semibold text-orange-600 hover:text-orange-700">
+            <button className="text-xs font-semibold text-brand-600 hover:text-brand-700">
               View all
             </button>
           </div>
@@ -292,7 +258,7 @@ export default function Home() {
             ))}
           </div>
         </section>
-      </div>
+      </PageShell>
     </>
   );
 }

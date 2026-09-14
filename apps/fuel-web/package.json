@@ -14,9 +14,12 @@
     "@companyio/auth-contracts": "workspace:*",
     "@companyio/auth-react": "workspace:*",
     "@companyio/platform-ui": "workspace:*",
+    "@tanstack/react-query": "^5.102.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^7.18.2"
+    "react-router-dom": "^7.18.2",
+    "sonner": "^2.0.8",
+    "zustand": "^4.4.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

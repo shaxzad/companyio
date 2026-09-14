@@ -1,11 +1,12 @@
 import { FormEvent, useState } from 'react';
 import { AuthClient } from '@companyio/auth-client';
+import { authErrorMessage } from '@companyio/auth-contracts';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from '../../icons';
 import Label from '../form/Label';
 import Input from '../form/input/InputField';
 import Checkbox from '../form/input/Checkbox';
-import Button from '../ui/button/Button';
+import { Button } from '../ui/button';
 
 export default function SignInForm({ client }: { client: AuthClient }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -24,7 +25,7 @@ export default function SignInForm({ client }: { client: AuthClient }) {
       await client.signInWithPassword({ email, password });
       navigate('/', { replace: true });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+      setError(authErrorMessage(caught, 'Unable to sign in.'));
     } finally {
       setIsSubmitting(false);
     }

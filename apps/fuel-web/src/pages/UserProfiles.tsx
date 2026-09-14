@@ -1,14 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
-import { UpdateProfileInput, User } from '@companyio/auth-contracts';
-import {
-  PageBreadcrumb,
-  PageMeta,
-  UserAddressCard,
-  UserInfoCard,
-  UserMetaCard,
-} from '@companyio/platform-ui';
+import { authErrorMessage, UpdateProfileInput, User } from '@companyio/auth-contracts';
+import { PageMeta, UserAddressCard, UserInfoCard, UserMetaCard } from '@companyio/platform-ui';
+import { ROLE_LABELS, roleOf } from '../features/auth/roles';
+import { LiveBadge, Notice, PageHeader, PageShell } from '../ui/page';
 
 const profileFromUser = (user: User): UpdateProfileInput => ({
   firstName: user.firstName ?? user.name.split(' ')[0] ?? '',
@@ -27,6 +23,7 @@ const profileFromUser = (user: User): UpdateProfileInput => ({
 export default function UserProfiles() {
   const { client, user, isLoading } = useAuth();
   const navigate = useNavigate();
+  const role = roleOf(user);
   const [profile, setProfile] = useState<UpdateProfileInput | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -59,7 +56,7 @@ export default function UserProfiles() {
       setProfile(profileFromUser(savedUser));
       setSuccess('Profile updated successfully.');
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Unable to update profile.');
+      setError(authErrorMessage(caught, 'Unable to update profile.'));
     } finally {
       setIsSaving(false);
     }
@@ -67,36 +64,36 @@ export default function UserProfiles() {
 
   return (
     <>
-      <PageMeta title="CompanyIO Profile" description="Manage your CompanyIO profile" />
-      <PageBreadcrumb pageTitle="Profile" />
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
-        <h3 className="mb-2 text-lg font-semibold text-gray-800 dark:text-white/90">Profile</h3>
-        <p className="mb-7 text-sm text-gray-500 dark:text-gray-400">
-          Update your details to keep your profile up-to-date.
-        </p>
-        {error && <p className="mb-4 text-sm text-error-500">{error}</p>}
-        {success && <p className="mb-4 text-sm text-success-500">{success}</p>}
-        <div className="space-y-6">
-          <UserMetaCard
-            profile={profile}
-            onChange={updateField}
-            onSave={saveProfile}
-            isSaving={isSaving}
-          />
-          <UserInfoCard
-            profile={profile}
-            onChange={updateField}
-            onSave={saveProfile}
-            isSaving={isSaving}
-          />
-          <UserAddressCard
-            profile={profile}
-            onChange={updateField}
-            onSave={saveProfile}
-            isSaving={isSaving}
-          />
-        </div>
-      </div>
+      <PageMeta title="Profile | Fuel Management" description="Manage your fuel management profile" />
+      <PageShell>
+        <PageHeader
+          title={user.name}
+          description={`Signed in as ${role ? ROLE_LABELS[role] : 'user'} · ${user.email}`}
+          action={<LiveBadge label="Your account" />}
+        />
+
+        {error && <Notice tone="error">{error}</Notice>}
+        {success && <Notice tone="success">{success}</Notice>}
+
+        <UserMetaCard
+          profile={profile}
+          onChange={updateField}
+          onSave={saveProfile}
+          isSaving={isSaving}
+        />
+        <UserInfoCard
+          profile={profile}
+          onChange={updateField}
+          onSave={saveProfile}
+          isSaving={isSaving}
+        />
+        <UserAddressCard
+          profile={profile}
+          onChange={updateField}
+          onSave={saveProfile}
+          isSaving={isSaving}
+        />
+      </PageShell>
     </>
   );
 }
