@@ -1,6 +1,6 @@
 {
   "name": "@companyio/platform-ui",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Shared product shell primitives for web, desktop, and mobile-adjacent React apps",
   "type": "module",
   "main": "dist/index.js",

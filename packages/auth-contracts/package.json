@@ -1,6 +1,6 @@
 {
   "name": "@companyio/auth-contracts",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Shared authentication, user, organization, and permission contracts",
   "type": "module",
   "main": "dist/index.js",
