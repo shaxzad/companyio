@@ -1,6 +1,6 @@
 {
   "name": "@companyio/auth-fastify",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Fastify authentication boundary for company APIs",
   "type": "module",
   "main": "dist/index.js",
@@ -17,6 +17,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "test": "tsc --noEmit"
   },
   "dependencies": {

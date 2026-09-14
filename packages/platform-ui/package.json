@@ -1,6 +1,6 @@
 {
   "name": "@companyio/platform-ui",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Shared product shell primitives for web, desktop, and mobile-adjacent React apps",
   "type": "module",
   "main": "dist/index.js",
@@ -25,14 +25,14 @@
   "scripts": {
     "clean": "rm -rf dist",
     "generate-icons": "node scripts/generate-icons.mjs",
-    "build": "pnpm run clean && pnpm run generate-icons && tsc && cp src/index.css dist/index.css",
+    "build": "npm run clean && npm run generate-icons && tsc && cp src/index.css dist/index.css",
+    "prepublishOnly": "npm run build",
     "test": "tsc --noEmit && vitest run"
   },
   "dependencies": {
     "@companyio/auth-client": "workspace:*",
     "@companyio/auth-contracts": "workspace:*",
     "@companyio/auth-react": "workspace:*",
-    "@companyio/shared-types": "workspace:*",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dropdown-menu": "^2.1.15",
     "@radix-ui/react-label": "^2.1.7",
