@@ -386,9 +386,4 @@ pnpm --filter @companyio/auth-react dev
 - `pnpm lint` - Lint all code
 - `pnpm format` - Format all code with Prettier
 
-# Run App
-
-``` bash
-   pnpm --filter @companyio/fuel-web dev
-   
-```
+The Fuel Management web app now lives in a separate repository (`../fuel-web`) and uses npm. This monorepo still hosts the API it calls (`apps/api`).
