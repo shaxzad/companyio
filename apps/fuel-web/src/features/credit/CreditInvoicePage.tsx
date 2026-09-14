@@ -1,16 +1,16 @@
 import { Link, useParams } from 'react-router-dom';
-import { PageMeta } from '@companyio/platform-ui';
-import { useCreditSale } from '../../hooks';
-import { formatMoney, toErrorMessage } from '../../utils';
-import { toast } from '../../ui/toast';
 import {
   Notice,
   PageHeader,
+  PageMeta,
   PageShell,
   primaryActionClass,
   secondaryActionClass,
   surfaceClass,
-} from '../../ui/page';
+  toast,
+} from '@companyio/platform-ui';
+import { useCreditSale } from '../../hooks';
+import { formatMoney, toErrorMessage } from '../../utils';
 import { useEffect } from 'react';
 
 export default function CreditInvoicePage() {

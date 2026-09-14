@@ -2,20 +2,22 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import type { User } from '@companyio/auth-contracts';
-import { Badge, DataTable, type DataTableColumn, PageMeta } from '@companyio/platform-ui';
-import { useUserMutations, useUsers } from '../../hooks';
-import { toErrorMessage } from '../../utils';
-import { ROLE_LABELS } from '../auth/roles';
 import {
+  Badge,
+  DataTable,
+  type DataTableColumn,
   KpiCard,
   Notice,
   PageHeader,
+  PageMeta,
   PageShell,
   primaryActionClass,
   secondaryActionClass,
   surfaceClass,
-} from '../../ui/page';
-
+} from '@companyio/platform-ui';
+import { useUserMutations, useUsers } from '../../hooks';
+import { toErrorMessage } from '../../utils';
+import { ROLE_LABELS } from '../auth/roles';
 export default function UsersPage() {
   const { user } = useAuth();
   const { data: users = [], isLoading, error: usersError } = useUsers();

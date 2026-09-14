@@ -1,12 +1,24 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
-import { DataTable, type DataTableColumn, DatePicker, Input, Label, PageMeta, Select } from '@companyio/platform-ui';
+import {
+  DataTable,
+  type DataTableColumn,
+  DatePicker,
+  Input,
+  Label,
+  Notice,
+  PageMeta,
+  primaryActionClass,
+  Select,
+  Surface,
+  surfaceClass,
+  SurfaceHeader,
+} from '@companyio/platform-ui';
 import { useFuelTypes, useRateMutations, useRates } from '../../hooks';
 import type { SellingRate } from '../../types';
 import { toErrorMessage } from '../../utils';
 import { canEditPath, roleOf } from '../auth/roles';
-import { Notice, Surface, SurfaceHeader, primaryActionClass, surfaceClass } from '../../ui/page';
 import { SettingsChrome } from './SettingsChrome';
 
 export default function RatesPage() {

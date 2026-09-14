@@ -1,9 +1,12 @@
 import { useMemo } from 'react';
-import { DataTable, type DataTableColumn } from '@companyio/platform-ui';
+import {
+  DataTable,
+  type DataTableColumn,
+  secondaryActionClass,
+  surfaceClass,
+} from '@companyio/platform-ui';
 import type { CashCountLine } from '../../../utils';
 import { formatMoney } from '../../../utils';
-import { secondaryActionClass, surfaceClass } from '../../../ui/page';
-
 type CashCountingBoardProps = {
   lines: CashCountLine[];
   totalCash: number;

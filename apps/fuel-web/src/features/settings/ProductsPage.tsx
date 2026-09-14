@@ -2,27 +2,25 @@ import { FormEvent, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import {
+  ActionSpinner,
   Badge,
   DataTable,
   type DataTableColumn,
   Input,
   Label,
   Modal,
-  PageMeta,
-} from '@companyio/platform-ui';
-import { useFuelTypes, useProductMutations } from '../../hooks';
-import type { FuelType } from '../../types';
-import { parseFinancialInput, requireFinancialInput, toErrorMessage, toFinancialInput } from '../../utils';
-import { toast } from '../../ui/toast';
-import { canEditPath, roleOf } from '../auth/roles';
-import {
-  ActionSpinner,
   Notice,
+  PageMeta,
   primaryActionClass,
   secondaryActionClass,
   submitActionLabel,
   surfaceClass,
-} from '../../ui/page';
+  toast,
+} from '@companyio/platform-ui';
+import { useFuelTypes, useProductMutations } from '../../hooks';
+import type { FuelType } from '../../types';
+import { parseFinancialInput, requireFinancialInput, toErrorMessage, toFinancialInput } from '../../utils';
+import { canEditPath, roleOf } from '../auth/roles';
 import { SettingsChrome } from './SettingsChrome';
 
 const emptyForm = () => ({

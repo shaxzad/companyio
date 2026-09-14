@@ -1,18 +1,17 @@
 import { Link, useLocation } from 'react-router-dom';
-import { PageMeta } from '@companyio/platform-ui';
-import { useAuth } from '@companyio/auth-react';
-import { canEditPath, roleOf } from '../features/auth/roles';
 import {
   KpiCard,
   LiveBadge,
   PageHeader,
+  PageMeta,
   PageShell,
+  primaryActionClass,
   QuickAction,
   Surface,
   SurfaceHeader,
-  primaryActionClass,
-} from '../ui/page';
-
+} from '@companyio/platform-ui';
+import { useAuth } from '@companyio/auth-react';
+import { canEditPath, roleOf } from '../features/auth/roles';
 type FuelModulePageProps = {
   title: string;
   description: string;

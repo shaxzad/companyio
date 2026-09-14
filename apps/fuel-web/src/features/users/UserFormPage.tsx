@@ -4,21 +4,23 @@ import {
   AssignableFuelRoleSchema,
   type AssignableFuelRole,
 } from '@companyio/auth-contracts';
-import { Input, Label, PageMeta, Select } from '@companyio/platform-ui';
-import { useUser, useUserMutations } from '../../hooks';
-import { toErrorMessage } from '../../utils';
-import { ROLE_LABELS, ROLE_OPTIONS } from '../auth/roles';
 import {
+  Input,
+  Label,
   LiveBadge,
   Notice,
   PageHeader,
+  PageMeta,
   PageShell,
-  Surface,
-  SurfaceHeader,
   primaryActionClass,
   secondaryActionClass,
-} from '../../ui/page';
-
+  Select,
+  Surface,
+  SurfaceHeader,
+} from '@companyio/platform-ui';
+import { useUser, useUserMutations } from '../../hooks';
+import { toErrorMessage } from '../../utils';
+import { ROLE_LABELS, ROLE_OPTIONS } from '../auth/roles';
 type FormState = {
   name: string;
   email: string;

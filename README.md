@@ -385,3 +385,10 @@ pnpm --filter @companyio/auth-react dev
 - `pnpm test` - Run all tests
 - `pnpm lint` - Lint all code
 - `pnpm format` - Format all code with Prettier
+
+# Run App
+
+``` bash
+   pnpm --filter @companyio/fuel-web dev
+   
+```

@@ -2,10 +2,17 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import { authErrorMessage, UpdateProfileInput, User } from '@companyio/auth-contracts';
-import { PageMeta, UserAddressCard, UserInfoCard, UserMetaCard } from '@companyio/platform-ui';
+import {
+  LiveBadge,
+  Notice,
+  PageHeader,
+  PageMeta,
+  PageShell,
+  UserAddressCard,
+  UserInfoCard,
+  UserMetaCard,
+} from '@companyio/platform-ui';
 import { ROLE_LABELS, roleOf } from '../features/auth/roles';
-import { LiveBadge, Notice, PageHeader, PageShell } from '../ui/page';
-
 const profileFromUser = (user: User): UpdateProfileInput => ({
   firstName: user.firstName ?? user.name.split(' ')[0] ?? '',
   lastName: user.lastName ?? user.name.split(' ').slice(1).join(' ') ?? '',

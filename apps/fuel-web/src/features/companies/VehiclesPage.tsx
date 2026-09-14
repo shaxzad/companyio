@@ -1,7 +1,24 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
-import { Badge, DataTable, type DataTableColumn, FormField, Modal, PageMeta, Select } from '@companyio/platform-ui';
+import {
+  ActionSpinner,
+  Badge,
+  DataTable,
+  type DataTableColumn,
+  FormField,
+  LiveBadge,
+  Modal,
+  PageHeader,
+  PageMeta,
+  PageShell,
+  primaryActionClass,
+  secondaryActionClass,
+  Select,
+  submitActionLabel,
+  surfaceClass,
+  toast,
+} from '@companyio/platform-ui';
 import {
   useFormSubmission,
   useOrganizationMutations,
@@ -10,19 +27,7 @@ import {
 } from '../../hooks';
 import type { Vehicle } from '../../types';
 import { toErrorMessage } from '../../utils';
-import { toast } from '../../ui/toast';
 import { canEditPath, roleOf } from '../auth/roles';
-import {
-  ActionSpinner,
-  LiveBadge,
-  PageHeader,
-  PageShell,
-  primaryActionClass,
-  secondaryActionClass,
-  submitActionLabel,
-  surfaceClass,
-} from '../../ui/page';
-
 const emptyForm = () => ({
   organizationId: '',
   registration: '',

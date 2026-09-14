@@ -45,7 +45,7 @@ export const registerUserRoutes = (
 
   app.get('/api/v1/users', async (request, reply) => {
     const auth = await requireOwner(request.headers.authorization);
-    if (!auth.ok) return reply.code(auth.error.status).send(auth.error.body);
+    if (auth.ok === false) return reply.code(auth.error.status).send(auth.error.body);
     const users = await prisma.user.findMany({
       where: { main_business_id: auth.user.main_business_id },
       orderBy: { createdAt: 'asc' },
@@ -55,7 +55,7 @@ export const registerUserRoutes = (
 
   app.post('/api/v1/users', async (request, reply) => {
     const auth = await requireOwner(request.headers.authorization);
-    if (!auth.ok) return reply.code(auth.error.status).send(auth.error.body);
+    if (auth.ok === false) return reply.code(auth.error.status).send(auth.error.body);
     const input = CreateManagedUserSchema.parse(request.body);
     const email = input.email.toLowerCase();
     const now = new Date();
@@ -85,7 +85,7 @@ export const registerUserRoutes = (
 
   app.patch('/api/v1/users/:id', async (request, reply) => {
     const auth = await requireOwner(request.headers.authorization);
-    if (!auth.ok) return reply.code(auth.error.status).send(auth.error.body);
+    if (auth.ok === false) return reply.code(auth.error.status).send(auth.error.body);
     const { id } = request.params as { id: string };
     const input = UpdateManagedUserSchema.parse(request.body);
     const record = await businessUser(auth.user, id);

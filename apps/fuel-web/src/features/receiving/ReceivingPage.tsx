@@ -1,7 +1,24 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
-import { DataTable, type DataTableColumn, DatePicker, Input, Label, PageMeta, Select } from '@companyio/platform-ui';
+import {
+  DataTable,
+  type DataTableColumn,
+  DatePicker,
+  Input,
+  KpiCard,
+  Label,
+  LiveBadge,
+  Notice,
+  PageHeader,
+  PageMeta,
+  PageShell,
+  primaryActionClass,
+  Select,
+  Surface,
+  surfaceClass,
+  SurfaceHeader,
+} from '@companyio/platform-ui';
 import {
   useCreateReceiving,
   useFuelTypes,
@@ -12,18 +29,6 @@ import {
 import type { FuelReceipt } from '../../types';
 import { formatMoney, roundTo, toErrorMessage } from '../../utils';
 import { canEditPath, roleOf } from '../auth/roles';
-import {
-  KpiCard,
-  LiveBadge,
-  Notice,
-  PageHeader,
-  PageShell,
-  Surface,
-  SurfaceHeader,
-  primaryActionClass,
-  surfaceClass,
-} from '../../ui/page';
-
 const money = (value: number) =>
   formatMoney(value, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 

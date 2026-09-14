@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { PrismaClient } from './generated/prisma/client.ts';
 import type { User as AuthUser } from '@companyio/auth-contracts';
@@ -23,11 +23,7 @@ const DEFAULT_ACCOUNTS: Array<{ name: string; code: string; kind: (typeof ONLINE
 
 const num = (value: unknown) => Number(value);
 
-const requireUser = async (
-  request: { headers: { authorization?: string } },
-  reply: { code: (status: number) => { send: (body: unknown) => unknown } },
-  authenticate: Authenticator
-) => {
+const requireUser = async (request: FastifyRequest, reply: FastifyReply, authenticate: Authenticator) => {
   const user = await authenticate(request.headers.authorization);
   if (!user || !user.id || !user.main_business_id) {
     reply.code(401).send({ message: 'Authentication required.' });
@@ -36,11 +32,7 @@ const requireUser = async (
   return user;
 };
 
-const requireOwner = async (
-  request: { headers: { authorization?: string } },
-  reply: { code: (status: number) => { send: (body: unknown) => unknown } },
-  authenticate: Authenticator
-) => {
+const requireOwner = async (request: FastifyRequest, reply: FastifyReply, authenticate: Authenticator) => {
   const user = await requireUser(request, reply, authenticate);
   if (!user) return null;
   if (user.role !== 'owner') {

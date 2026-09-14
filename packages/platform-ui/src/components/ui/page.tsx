@@ -1,7 +1,7 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-/** Fuel UI tokens: primary #fb6514 (brand/orange), white, black/gray, error/success status. */
+/** Shared page layout tokens (brand via app theme — fuel remaps brand-* to #fb6514). */
 export const pageEyebrowClass =
   'text-xs font-semibold uppercase tracking-[0.18em] text-brand-600';
 export const pageTitleClass = 'mt-2 text-2xl font-semibold text-gray-900 dark:text-white';
@@ -63,7 +63,7 @@ export function LiveBadge({ label = 'Operations live' }: { label?: string }) {
 }
 
 export function PageHeader({
-  eyebrow = 'Gilgit Station',
+  eyebrow = 'Operations',
   title,
   description,
   action,

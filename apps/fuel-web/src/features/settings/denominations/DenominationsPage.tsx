@@ -1,5 +1,8 @@
 import { useEffect } from 'react';
-import { PageMeta } from '@companyio/platform-ui';
+import {
+  PageMeta,
+  toast,
+} from '@companyio/platform-ui';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import {
@@ -9,7 +12,6 @@ import {
 } from '../../../hooks';
 import type { CashDenomination } from '../../../types';
 import { toErrorMessage } from '../../../utils';
-import { toast } from '../../../ui/toast';
 import { canEditPath, roleOf } from '../../auth/roles';
 import { SettingsChrome } from '../SettingsChrome';
 import { CashCountingBoard } from './CashCountingBoard';

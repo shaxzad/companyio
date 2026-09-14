@@ -1,7 +1,24 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
-import { DataTable, type DataTableColumn, DatePicker, Input, Label, PageMeta, Select } from '@companyio/platform-ui';
+import {
+  DataTable,
+  type DataTableColumn,
+  DatePicker,
+  Input,
+  KpiCard,
+  Label,
+  LiveBadge,
+  Notice,
+  PageHeader,
+  PageMeta,
+  PageShell,
+  primaryActionClass,
+  Select,
+  Surface,
+  surfaceClass,
+  SurfaceHeader,
+} from '@companyio/platform-ui';
 import {
   useOpenBusinessDay,
   useOpeningPreview,
@@ -10,18 +27,6 @@ import {
 import type { OpeningMeterRow, OpeningTankRow } from '../../types';
 import { emptyRecord, requireFinancialInput, toErrorMessage, toFinancialInput, todayYmd } from '../../utils';
 import { canEditPath, roleOf } from '../auth/roles';
-import {
-  KpiCard,
-  LiveBadge,
-  Notice,
-  PageHeader,
-  PageShell,
-  Surface,
-  SurfaceHeader,
-  primaryActionClass,
-  surfaceClass,
-} from '../../ui/page';
-
 export default function DailyOpeningPage() {
   const { user } = useAuth();
   const location = useLocation();

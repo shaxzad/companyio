@@ -1,19 +1,18 @@
-import { PageMeta } from '@companyio/platform-ui';
-import { useAuth } from '@companyio/auth-react';
-import { useDashboard } from '../../hooks';
-import { formatMoney, toErrorMessage } from '../../utils';
-import { canAccessPath, ROLE_LABELS, roleOf } from '../../features/auth/roles';
 import {
   KpiCard,
   LiveBadge,
   Notice,
   PageHeader,
+  PageMeta,
   PageShell,
-  QuickAction,
   primaryActionClass,
+  QuickAction,
   surfaceClass,
-} from '../../ui/page';
-
+} from '@companyio/platform-ui';
+import { useAuth } from '@companyio/auth-react';
+import { useDashboard } from '../../hooks';
+import { formatMoney, toErrorMessage } from '../../utils';
+import { canAccessPath, ROLE_LABELS, roleOf } from '../../features/auth/roles';
 const activity = [
   {
     label: 'Fleet sale',

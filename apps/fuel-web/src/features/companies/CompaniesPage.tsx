@@ -1,23 +1,28 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
-import { Badge, DataTable, type DataTableColumn, FormField, Modal, PageMeta, Select } from '@companyio/platform-ui';
-import { useFormSubmission, useOrganizationMutations, useOrganizations } from '../../hooks';
-import type { CreditType, Organization } from '../../types';
-import { parseFinancialInput, toFinancialInput, toErrorMessage } from '../../utils';
-import { toast } from '../../ui/toast';
-import { canEditPath, roleOf } from '../auth/roles';
 import {
   ActionSpinner,
+  Badge,
+  DataTable,
+  type DataTableColumn,
+  FormField,
   LiveBadge,
+  Modal,
   PageHeader,
+  PageMeta,
   PageShell,
   primaryActionClass,
   secondaryActionClass,
+  Select,
   submitActionLabel,
   surfaceClass,
-} from '../../ui/page';
-
+  toast,
+} from '@companyio/platform-ui';
+import { useFormSubmission, useOrganizationMutations, useOrganizations } from '../../hooks';
+import type { CreditType, Organization } from '../../types';
+import { parseFinancialInput, toFinancialInput, toErrorMessage } from '../../utils';
+import { canEditPath, roleOf } from '../auth/roles';
 const CREDIT_OPTIONS: Array<{ value: CreditType; label: string }> = [
   { value: 'DAILY', label: 'Daily' },
   { value: 'MONTHLY', label: 'Monthly' },

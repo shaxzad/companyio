@@ -1,11 +1,18 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
-import { Input, Label, PageMeta } from '@companyio/platform-ui';
+import {
+  Input,
+  Label,
+  Notice,
+  PageMeta,
+  primaryActionClass,
+  Surface,
+  SurfaceHeader,
+} from '@companyio/platform-ui';
 import { useStationMutations, useStations } from '../../hooks';
 import { toErrorMessage } from '../../utils';
 import { canEditPath, roleOf } from '../auth/roles';
-import { Notice, Surface, SurfaceHeader, primaryActionClass } from '../../ui/page';
 import { SettingsChrome } from './SettingsChrome';
 
 export default function PumpProfilePage() {

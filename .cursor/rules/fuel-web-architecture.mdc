@@ -13,7 +13,6 @@ Every change under `apps/fuel-web` must follow this structure. Do not put API ca
 ```text
 apps/fuel-web/src/
 ├── app/           # providers, queryClient
-├── components/    # app-only presentational UI (rare — prefer @companyio/platform-ui)
 ├── features/      # feature screens + feature-local UI only
 ├── hooks/         # React Query hooks + shared app hooks (query keys live here)
 ├── services/      # HTTP / API functions only (no React)
@@ -24,7 +23,9 @@ apps/fuel-web/src/
 └── pages/         # route-level pages that compose features
 ```
 
-Shared UI that multiple apps will reuse (**DataTable**, **FormField**, **ConfirmDialog**, **DatePicker**, **Modal**, inputs, etc.) lives in **`@companyio/platform-ui`** — not under `apps/fuel-web/src/components`.
+**Do not** add `apps/fuel-web/src/ui` or shared presentational components under the app. All reusable UI lives in **`@companyio/platform-ui`** (see `doc/PLATFORM_UI.md` and `.cursor/rules/platform-ui-shared.mdc`).
+
+Shared UI that multiple apps will reuse (**DataTable**, **FormField**, **ConfirmDialog**, **DatePicker**, **Modal**, **PageShell**, **toast**, inputs, etc.) lives in **`@companyio/platform-ui`**.
 
 ## Hard rules
 
@@ -38,9 +39,9 @@ Shared UI that multiple apps will reuse (**DataTable**, **FormField**, **Confirm
 8. **Types** — put shared entity/API types in `types/`. Do not export types from service files; import types into services from `types/`.
 9. **Utils** — put formatting / date / error helpers in `utils/`. Do not redefine `formatMoney`, `roundTo`, `toErrorMessage`, `todayYmd` in components.
 10. **Financial inputs** — use `toFinancialInput` / `parseFinancialInput` / `requireFinancialInput` from `utils/financial`. Never prefill inputs with bare `0`. Empty means missing; explicit `0` means the operator entered zero. Do not coerce empty with `Number(x || 0)` on submit.
-11. **API errors** — backend returns `{ message, fields?, code? }`. `apiRequest` throws `ApiError`. Use `useFormSubmission` for forms: field errors under inputs via `FormField` / `fieldError()`, global errors via `toast` (`ui/toast`). **Never reset form fields until the mutation succeeds** (`onSuccess` only). Do not invent per-screen error parsers.
+11. **API errors** — backend returns `{ message, fields?, code? }`. `apiRequest` throws `ApiError`. Use `useFormSubmission` for forms: field errors under inputs via `FormField` / `fieldError()`, global errors via `toast` from `@companyio/platform-ui`. **Never reset form fields until the mutation succeeds** (`onSuccess` only). Do not invent per-screen error parsers.
 12. **Confirmations** — use `ConfirmDialog` + `useConfirmDialog` from `@companyio/platform-ui`. Never use `window.confirm` / `alert` / `prompt`.
-13. **Tables / form fields / dates** — use `DataTable`, `FormField`, and `DatePicker` from `@companyio/platform-ui`. Use `DatePicker` with `enableTime` for date-time; never native `type="date"` / `type="datetime-local"` in fuel-web features. Do not add duplicate shared UI under `apps/fuel-web/src/components`.
+13. **Shared UI** — use `DataTable`, `FormField`, `DatePicker`, `PageShell`, `PageHeader`, `Surface`, `toast`, `submitActionLabel`, etc. from `@companyio/platform-ui`. Never native `type="date"` / `type="datetime-local"`. Never add `apps/fuel-web/src/ui` or duplicate shared UI under the app.
 14. **User guide** — after shipping a user-facing feature, update `apps/fuel-web/doc/HOW_TO_USE.md` with how-to-use steps (see `.cursor/rules/fuel-web-howto-use.mdc`).
 15. **TypeScript** — no unnecessary `any`. Prefer explicit return types on public service functions.
 16. **Auth user** — use `@companyio/auth-react` (`useAuth`). Do not duplicate current user into Zustand unless there is a clear UI-only need.
@@ -53,7 +54,7 @@ Shared UI that multiple apps will reuse (**DataTable**, **FormField**, **Confirm
 3. Add query key(s) in `hooks/queryKeys.ts`
 4. Add `useQuery` / `useMutation` hook(s) in `hooks/`
 5. Build UI in `features/<feature>/` that only consumes hooks
-6. Wire forms with `useFormSubmission` + `FormField` / `DatePicker` / `DataTable` / `ConfirmDialog` from `@companyio/platform-ui` (reset only in `onSuccess`)
+6. Wire forms with `useFormSubmission` + shared UI from `@companyio/platform-ui` (`FormField` / `DatePicker` / `DataTable` / `ConfirmDialog` / `PageShell` / `toast` — reset only in `onSuccess`)
 7. Register route in `config/routes.tsx` if needed
 8. Use `store/<feature>/` only for non-server UI state
 9. Update `doc/HOW_TO_USE.md` with end-user steps for the feature
@@ -67,7 +68,7 @@ Shared UI that multiple apps will reuse (**DataTable**, **FormField**, **Confirm
 - Resetting form state in `try` before `await mutation` / resetting on catch
 - Showing API failures only in a collapsed panel with no toast / field hint
 - Using `window.confirm`, `alert`, or `prompt` for user feedback
-- Duplicating shared UI in `apps/fuel-web/src/components` instead of `@companyio/platform-ui`
+- Duplicating shared UI in `apps/fuel-web/src/ui` or `src/components` instead of `@companyio/platform-ui`
 - Duplicating static `<table>` markup instead of `DataTable` + column config
 - Native `type="date"` / `type="datetime-local"` instead of platform-ui `DatePicker`
 - Shipping a feature without updating `doc/HOW_TO_USE.md`

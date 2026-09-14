@@ -256,7 +256,7 @@ export const registerCreditRoutes = (
     if (!organization) return sendApiError(reply, 404, 'Company not found.', { code: 'NOT_FOUND' });
 
     const openingBalance = num(organization.openingBalance);
-    const entries: Array<{
+    type LedgerDraft = {
       date: Date;
       type: 'OPENING' | 'CREDIT' | 'PAYMENT';
       debit: number;
@@ -264,7 +264,8 @@ export const registerCreditRoutes = (
       reference: string;
       description: string;
       saleId?: string;
-    }> = [
+    };
+    const entries: LedgerDraft[] = [
       {
         date: organization.createdAt,
         type: 'OPENING',
@@ -273,26 +274,31 @@ export const registerCreditRoutes = (
         reference: 'OPENING',
         description: 'Opening balance',
       },
-      ...organization.sales.map((sale) => ({
-        date: sale.soldAt,
-        type: 'CREDIT' as const,
-        debit: num(sale.totalAmount),
-        credit: 0,
-        reference: sale.invoiceNumber ?? sale.saleNumber,
-        description: `${sale.vehicle?.registration ?? 'Vehicle'} · ${sale.lines
-          .map((line) => line.fuelType.code)
-          .join(', ')}`,
-        saleId: sale.id,
-      })),
-      ...organization.payments.map((payment) => ({
-        date: payment.paidAt,
-        type: 'PAYMENT' as const,
-        debit: 0,
-        credit: num(payment.amount),
-        reference: payment.reference ?? payment.id,
-        description: `${payment.method} payment`,
-      })),
-    ].sort((left, right) => left.date.getTime() - right.date.getTime());
+      ...organization.sales.map(
+        (sale): LedgerDraft => ({
+          date: sale.soldAt,
+          type: 'CREDIT',
+          debit: num(sale.totalAmount),
+          credit: 0,
+          reference: sale.invoiceNumber ?? sale.saleNumber,
+          description: `${sale.vehicle?.registration ?? 'Vehicle'} · ${sale.lines
+            .map((line) => line.fuelType.code)
+            .join(', ')}`,
+          saleId: sale.id,
+        })
+      ),
+      ...organization.payments.map(
+        (payment): LedgerDraft => ({
+          date: payment.paidAt,
+          type: 'PAYMENT',
+          debit: 0,
+          credit: num(payment.amount),
+          reference: payment.reference ?? payment.id,
+          description: `${payment.method} payment`,
+        })
+      ),
+    ];
+    entries.sort((left, right) => left.date.getTime() - right.date.getTime());
 
     let balance = 0;
     const ledger = entries.map((entry) => {

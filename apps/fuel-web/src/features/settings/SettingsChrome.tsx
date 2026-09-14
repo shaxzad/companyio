@@ -1,6 +1,10 @@
 import type { PropsWithChildren } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LiveBadge, PageHeader, PageShell } from '../../ui/page';
+import {
+  LiveBadge,
+  PageHeader,
+  PageShell,
+} from '@companyio/platform-ui';
 
 const TABS = [
   { to: '/settings/pump', label: 'Pump profile' },

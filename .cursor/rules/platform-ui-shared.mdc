@@ -1,0 +1,37 @@
+---
+description: All reusable UI components must live in @companyio/platform-ui — never apps/*/src/ui or local shared components folders
+globs: "{apps/**/*,packages/platform-ui/**/*}"
+alwaysApply: false
+---
+
+# Shared UI lives in platform-ui (required)
+
+Every reusable presentational / layout / form / feedback component for product apps belongs in:
+
+`packages/platform-ui` → import from `@companyio/platform-ui`
+
+## Do this
+
+- Add new shared UI under `packages/platform-ui/src/components/ui/` (or existing form/layout folders when that matches the pattern).
+- Export it from `packages/platform-ui/src/index.tsx`.
+- Rebuild the package (`pnpm --filter @companyio/platform-ui build`) before apps consume new exports.
+- Apps (`fuel-web`, `web`, `admin`, …) only **compose** these primitives in `features/` / `pages/`.
+
+## Do not do this
+
+- Do **not** create `apps/fuel-web/src/ui/` (or similar) for shared page shells, toasts, buttons, tables, dialogs, date pickers, form fields, etc.
+- Do **not** duplicate `DataTable`, `FormField`, `ConfirmDialog`, `DatePicker`, `Modal`, `PageShell`, `toast`, action button classes, etc. inside an app.
+- Do **not** put reusable UI under `apps/*/src/components` unless it is truly one-app-only and cannot be shared — prefer platform-ui by default.
+
+## Already in platform-ui (use these)
+
+- Forms: `FormField`, `Input`, `Label`, `Select`, `DatePicker`, …
+- Feedback: `ConfirmDialog`, `useConfirmDialog`, `toast`, `AppToaster`, `Notice`, `Alert`, …
+- Data: `DataTable`, …
+- Layout / page chrome: `PageShell`, `PageHeader`, `Surface`, `SurfaceHeader`, `KpiCard`, `LiveBadge`, `QuickAction`, `primaryActionClass`, `secondaryActionClass`, `submitActionLabel`, `ActionSpinner`, …
+
+## When finishing UI work
+
+1. New shared piece → platform-ui + export + build  
+2. App imports from `@companyio/platform-ui` only  
+3. No leftover local copy under the app

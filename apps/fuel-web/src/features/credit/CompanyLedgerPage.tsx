@@ -1,20 +1,22 @@
 import { useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { DataTable, type DataTableColumn, PageMeta, Select } from '@companyio/platform-ui';
-import { useCompanyLedger, useOrganizations } from '../../hooks';
-import type { LedgerEntry } from '../../types';
-import { formatMoney, toErrorMessage } from '../../utils';
-import { toast } from '../../ui/toast';
 import {
+  DataTable,
+  type DataTableColumn,
   KpiCard,
   LiveBadge,
   PageHeader,
+  PageMeta,
   PageShell,
+  secondaryActionClass,
+  Select,
   Surface,
   SurfaceHeader,
-  secondaryActionClass,
-} from '../../ui/page';
-
+  toast,
+} from '@companyio/platform-ui';
+import { useCompanyLedger, useOrganizations } from '../../hooks';
+import type { LedgerEntry } from '../../types';
+import { formatMoney, toErrorMessage } from '../../utils';
 export default function CompanyLedgerPage() {
   const [params, setParams] = useSearchParams();
   const organizationId = params.get('organizationId') ?? '';

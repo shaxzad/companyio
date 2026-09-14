@@ -5,6 +5,10 @@ import {
   DataTable,
   type DataTableColumn,
   FormField,
+  primaryActionClass,
+  secondaryActionClass,
+  surfaceClass,
+  toast,
   useConfirmDialog,
 } from '@companyio/platform-ui';
 import { useFormSubmission } from '../../../hooks';
@@ -15,9 +19,6 @@ import {
   requireFinancialInput,
   toErrorMessage,
 } from '../../../utils';
-import { toast } from '../../../ui/toast';
-import { primaryActionClass, secondaryActionClass, surfaceClass } from '../../../ui/page';
-
 type ManageDenominationsProps = {
   canEdit: boolean;
   rows: CashDenomination[];

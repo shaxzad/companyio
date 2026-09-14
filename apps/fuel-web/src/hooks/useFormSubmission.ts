@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react';
 import { presentError, toErrorMessage } from '../utils/errors';
-import { toast } from '../ui/toast';
+import {
+  toast,
+} from '@companyio/platform-ui';
 
 export type FieldErrors = Record<string, string>;
 

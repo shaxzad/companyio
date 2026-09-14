@@ -2,13 +2,24 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import {
+  ActionSpinner,
   DataTable,
   type DataTableColumn,
   DatePicker,
   FormField,
+  KpiCard,
+  LiveBadge,
   Modal,
+  Notice,
+  PageHeader,
   PageMeta,
+  PageShell,
+  primaryActionClass,
+  secondaryActionClass,
   Select,
+  submitActionLabel,
+  surfaceClass,
+  toast,
 } from '@companyio/platform-ui';
 import {
   useFormSubmission,
@@ -26,21 +37,7 @@ import {
   toErrorMessage,
   todayYmd,
 } from '../../utils';
-import { toast } from '../../ui/toast';
 import { canEditPath, roleOf } from '../auth/roles';
-import {
-  ActionSpinner,
-  KpiCard,
-  LiveBadge,
-  Notice,
-  PageHeader,
-  PageShell,
-  primaryActionClass,
-  secondaryActionClass,
-  submitActionLabel,
-  surfaceClass,
-} from '../../ui/page';
-
 const emptyPayment = () => ({
   paymentAccountId: '',
   organizationId: '',

@@ -2,14 +2,21 @@ import { FormEvent, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@companyio/auth-react';
 import {
+  ActionSpinner,
   ConfirmDialog,
   DataTable,
   type DataTableColumn,
   Input,
   Label,
   Modal,
+  Notice,
   PageMeta,
+  primaryActionClass,
+  secondaryActionClass,
   Select,
+  submitActionLabel,
+  surfaceClass,
+  toast,
   useConfirmDialog,
 } from '@companyio/platform-ui';
 import {
@@ -20,16 +27,7 @@ import {
 } from '../../hooks';
 import type { StationAssets } from '../../types';
 import { requireFinancialInput, toErrorMessage, toFinancialInput } from '../../utils';
-import { toast } from '../../ui/toast';
 import { canEditPath, roleOf } from '../auth/roles';
-import {
-  ActionSpinner,
-  Notice,
-  primaryActionClass,
-  secondaryActionClass,
-  submitActionLabel,
-  surfaceClass,
-} from '../../ui/page';
 import { SettingsChrome } from './SettingsChrome';
 
 const emptyTank = () => ({ name: '', fuelTypeId: '', capacity: '', openingStock: '' });
