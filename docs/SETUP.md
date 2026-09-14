@@ -12,7 +12,7 @@
 
 ```bash
 git clone <repository-url>
-cd interview-copilot
+cd companyio
 ```
 
 ### 2. Install Dependencies
@@ -66,21 +66,29 @@ pnpm --filter @companyio/desktop dev
 After installation, you'll see:
 
 ```
-interview-copilot/
+companyio/
 ├── apps/
-│   ├── desktop/        # React + Tauri desktop app
-│   │   ├── src/
-│   │   ├── package.json
-│   │   └── vite.config.ts
-│   └── api/            # Fastify API server
-│       ├── src/
-│       ├── package.json
-│       └── vitest.config.ts
+│   ├── admin/          # Admin web app
+│   ├── web/            # Web app
+│   ├── api/            # Fastify API server
+│   └── desktop/        # React + Tauri desktop app
 ├── packages/
-│   ├── shared-types/   # Shared TypeScript types
-│   └── ai-schemas/     # Zod validation schemas
-├── package.json        # Root workspace config
-└── pnpm-workspace.yaml # Workspace definition
+│   ├── auth-client/
+│   ├── auth-contracts/
+│   ├── auth-fastify/
+│   ├── auth-react/
+│   ├── ai-schemas/
+│   ├── platform-database/
+│   ├── platform-tenancy/
+│   ├── platform-ui/
+│   └── shared-types/
+├── docs/
+├── scripts/
+├── package.json       # Root workspace config
+├── pnpm-workspace.yaml
+├── tsconfig.json
+├── .env.example
+└── README.md
 ```
 
 ## Development Commands

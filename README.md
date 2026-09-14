@@ -5,24 +5,34 @@ This document summarizes the complete monorepo configuration for CompanyIO.
 ## Project Structure
 
 ```
-interview-copilot/
+companyio/
 ├── apps/
-│   ├── desktop/                    # Tauri + React desktop app
+│   ├── admin/                     # CompanyIO admin web app
 │   │   ├── src/
-│   │   │   ├── App.tsx            # Main React component
-│   │   │   ├── main.tsx           # React entry point
-│   │   │   └── index.css          # Styling
-│   │   ├── index.html             # HTML template
-│   │   ├── package.json           # Desktop app dependencies
-│   │   ├── tsconfig.json          # TypeScript config
-│   │   ├── vite.config.ts         # Vite bundler config
-│   │   ├── vitest.config.ts       # Testing config
-│   │   ├── tauri.conf.json        # Tauri desktop config
-│   │   ├── tailwind.config.js     # Tailwind CSS config
-│   │   ├── postcss.config.js      # PostCSS config
-│   │   └── .eslintrc.json         # ESLint config
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   └── vite.config.ts
 │   │
-│   └── api/                        # Node.js + Fastify API
+│   ├── web/                      # CompanyIO web app
+│   │   ├── src/
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   └── vite.config.ts
+│   │
+│   ├── api/                      # Node.js + Fastify API
+│   │   ├── src/
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   └── vitest.config.ts
+│   │
+│   └── desktop/                  # Tauri + React desktop app
+│       ├── src/
+│       ├── src-tauri/
+│       ├── package.json
+│       ├── vite.config.ts
+│       └── tauri.conf.json
+│
+├── packages/
 │       ├── src/
 │       │   └── index.ts           # Fastify server entry
 │       ├── package.json

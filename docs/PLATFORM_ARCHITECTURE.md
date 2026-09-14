@@ -49,7 +49,7 @@ Do not put provider SDKs, secrets, or platform storage APIs in product applicati
 ```tsx
 const authClient = new AuthClient({
   baseUrl: import.meta.env.VITE_API_URL,
-  clientId: 'interview-copilot-desktop',
+  clientId: 'companyio-desktop',
   storage: secureStorage,
 });
 

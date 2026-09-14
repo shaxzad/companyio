@@ -31,9 +31,9 @@ Every query must start with the authenticated tenant filter. Use `tenantFilter(r
 Start with one platform monorepo for shared packages and separate product repositories when product teams or release cycles diverge:
 
 ```text
+companyio              Current monorepo for the CompanyIO platform and product apps
 company-platform       Shared auth, tenancy, database helpers, UI, permissions
 smart-school-erp       School API and Web/Desktop/Mobile product apps
-interview-copilot      CompanyIO interview product apps and domain API
 company-crm            CRM product apps and domain API
 ```
 
