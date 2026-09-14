@@ -179,7 +179,8 @@ export const registerReceivingRoutes = (
       const day = await prisma.businessDay.findFirst({
         where: { id: businessDayId, stationId: station.id, status: 'OPEN' },
       });
-      if (!day) return reply.code(409).send({ message: 'Open business day not found for this station.' });
+      if (!day)
+        return reply.code(409).send({ message: 'Open business day not found for this station.' });
     } else {
       const openDay = await prisma.businessDay.findFirst({
         where: { stationId: station.id, status: 'OPEN' },

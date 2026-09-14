@@ -18,12 +18,7 @@ const organizationCreate = z.object({
     .max(160),
   contactName: z.string().trim().max(120).optional().or(z.literal('')),
   phone: z.string().trim().max(40).optional().or(z.literal('')),
-  email: z
-    .string()
-    .trim()
-    .email('Enter a valid email address.')
-    .optional()
-    .or(z.literal('')),
+  email: z.string().trim().email('Enter a valid email address.').optional().or(z.literal('')),
   address: z.string().trim().max(240).optional().or(z.literal('')),
   paymentTerms: z.string().trim().max(80).optional().or(z.literal('')),
   creditLimit: z.number().nonnegative('Credit limit cannot be negative.').optional(),
@@ -168,9 +163,7 @@ export const registerOrganizationRoutes = (
           ...(input.phone !== undefined ? { phone: input.phone || null } : {}),
           ...(input.email !== undefined ? { email: input.email || null } : {}),
           ...(input.address !== undefined ? { address: input.address || null } : {}),
-          ...(input.paymentTerms !== undefined
-            ? { paymentTerms: input.paymentTerms || null }
-            : {}),
+          ...(input.paymentTerms !== undefined ? { paymentTerms: input.paymentTerms || null } : {}),
           ...(input.creditLimit !== undefined ? { creditLimit: input.creditLimit } : {}),
           ...(input.creditType !== undefined ? { creditType: input.creditType } : {}),
           ...(input.active !== undefined ? { active: input.active } : {}),

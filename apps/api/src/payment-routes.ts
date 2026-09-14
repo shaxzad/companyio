@@ -14,16 +14,24 @@ const date = z.coerce.date();
 const ONLINE_KINDS = ['BANK', 'CARD', 'TRANSFER'] as const;
 
 /** Placeholder defaults until Section 5 confirms the real account list. */
-const DEFAULT_ACCOUNTS: Array<{ name: string; code: string; kind: (typeof ONLINE_KINDS)[number]; sortOrder: number }> =
-  [
-    { name: 'Bank transfer', code: 'BANK', kind: 'BANK', sortOrder: 10 },
-    { name: 'Card / POS', code: 'CARD', kind: 'CARD', sortOrder: 20 },
-    { name: 'Online transfer', code: 'TRANSFER', kind: 'TRANSFER', sortOrder: 30 },
-  ];
+const DEFAULT_ACCOUNTS: Array<{
+  name: string;
+  code: string;
+  kind: (typeof ONLINE_KINDS)[number];
+  sortOrder: number;
+}> = [
+  { name: 'Bank transfer', code: 'BANK', kind: 'BANK', sortOrder: 10 },
+  { name: 'Card / POS', code: 'CARD', kind: 'CARD', sortOrder: 20 },
+  { name: 'Online transfer', code: 'TRANSFER', kind: 'TRANSFER', sortOrder: 30 },
+];
 
 const num = (value: unknown) => Number(value);
 
-const requireUser = async (request: FastifyRequest, reply: FastifyReply, authenticate: Authenticator) => {
+const requireUser = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+  authenticate: Authenticator
+) => {
   const user = await authenticate(request.headers.authorization);
   if (!user || !user.id || !user.main_business_id) {
     reply.code(401).send({ message: 'Authentication required.' });
@@ -32,7 +40,11 @@ const requireUser = async (request: FastifyRequest, reply: FastifyReply, authent
   return user;
 };
 
-const requireOwner = async (request: FastifyRequest, reply: FastifyReply, authenticate: Authenticator) => {
+const requireOwner = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+  authenticate: Authenticator
+) => {
   const user = await requireUser(request, reply, authenticate);
   if (!user) return null;
   if (user.role !== 'owner') {
@@ -143,7 +155,12 @@ export const registerPaymentRoutes = (
     const input = z
       .object({
         name: z.string().trim().min(1).max(80),
-        code: z.string().trim().min(1).max(40).transform((value) => value.toUpperCase()),
+        code: z
+          .string()
+          .trim()
+          .min(1)
+          .max(40)
+          .transform((value) => value.toUpperCase()),
         kind: z.enum(['CASH', 'BANK', 'CARD', 'TRANSFER']),
         sortOrder: z.number().int().optional(),
       })
@@ -217,7 +234,8 @@ export const registerPaymentRoutes = (
     const existing = await prisma.paymentAccount.findFirst({
       where: { id: params.id, businessId: user.main_business_id! },
     });
-    if (!existing) return sendApiError(reply, 404, 'Payment account not found.', { code: 'NOT_FOUND' });
+    if (!existing)
+      return sendApiError(reply, 404, 'Payment account not found.', { code: 'NOT_FOUND' });
 
     return reply.send(
       await prisma.paymentAccount.update({
@@ -233,7 +251,10 @@ export const registerPaymentRoutes = (
     const query = z
       .object({
         stationId: id,
-        businessDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        businessDate: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
         from: date.optional(),
         to: date.optional(),
         onlineOnly: z

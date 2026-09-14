@@ -16,14 +16,7 @@ export type FormFieldProps = {
  * Label + Input with inline field error (Input `error` + `hint`).
  * Shared across product apps — keep forms consistent.
  */
-export function FormField({
-  id,
-  label,
-  error,
-  required,
-  children,
-  ...inputProps
-}: FormFieldProps) {
+export function FormField({ id, label, error, required, children, ...inputProps }: FormFieldProps) {
   return (
     <div>
       <Label htmlFor={id}>

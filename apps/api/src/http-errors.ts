@@ -18,9 +18,7 @@ export const apiError = (
   options?: { fields?: Record<string, string>; code?: string }
 ): ApiErrorBody => ({
   message,
-  ...(options?.fields && Object.keys(options.fields).length > 0
-    ? { fields: options.fields }
-    : {}),
+  ...(options?.fields && Object.keys(options.fields).length > 0 ? { fields: options.fields } : {}),
   ...(options?.code ? { code: options.code } : {}),
 });
 
@@ -34,10 +32,7 @@ export const fromZodError = (error: ZodError): ApiErrorBody => {
       issue.message === 'Required' ? `${key} is required.` : issue.message || 'Invalid value.';
   }
   const firstKey = Object.keys(fields)[0];
-  const message =
-    firstKey && fields[firstKey]
-      ? fields[firstKey]
-      : 'Invalid input.';
+  const message = firstKey && fields[firstKey] ? fields[firstKey] : 'Invalid input.';
   return apiError(message, {
     fields: Object.keys(fields).length > 0 ? fields : undefined,
     code: 'VALIDATION_ERROR',

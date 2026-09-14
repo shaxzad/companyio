@@ -13,8 +13,7 @@ type GetAuthenticatedUser = (authorization?: string) => Promise<AuthUser | null>
 
 type AuthErrorBody = { message: string };
 type OwnerAuth =
-  | { ok: true; user: AuthUser }
-  | { ok: false; error: { status: 401 | 403; body: AuthErrorBody } };
+  { ok: true; user: AuthUser } | { ok: false; error: { status: 401 | 403; body: AuthErrorBody } };
 
 const forbidden = (message: string): AuthErrorBody => ({ message });
 const notFound: AuthErrorBody = { message: 'User not found.' };
@@ -92,7 +91,9 @@ export const registerUserRoutes = (
     if (!record) return reply.code(404).send(notFound);
 
     if (record.role === 'owner' && (input.role || input.isActive === false))
-      return reply.code(400).send({ message: 'The owner account cannot be reassigned or deactivated.' });
+      return reply
+        .code(400)
+        .send({ message: 'The owner account cannot be reassigned or deactivated.' });
 
     try {
       const updated = await prisma.user.update({

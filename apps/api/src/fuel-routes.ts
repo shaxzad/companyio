@@ -235,22 +235,20 @@ export const registerFuelRoutes = (
     if (user.role !== 'owner')
       return reply.code(403).send({ message: 'Only the owner can change master data.' });
     const input = fuelTypeInput.parse(request.body);
-    return reply
-      .code(201)
-      .send(
-        await prisma.fuelType.create({
-          data: {
-            id: randomUUID(),
-            businessId: user.main_business_id,
-            name: input.name,
-            code: input.code,
-            sellingPrice: input.sellingPrice,
-            purchasePrice: input.purchasePrice,
-            minimumStock: input.minimumStock,
-            reorderLevel: input.reorderLevel,
-          },
-        })
-      );
+    return reply.code(201).send(
+      await prisma.fuelType.create({
+        data: {
+          id: randomUUID(),
+          businessId: user.main_business_id,
+          name: input.name,
+          code: input.code,
+          sellingPrice: input.sellingPrice,
+          purchasePrice: input.purchasePrice,
+          minimumStock: input.minimumStock,
+          reorderLevel: input.reorderLevel,
+        },
+      })
+    );
   });
 
   app.post('/api/v1/fuel/sales', async (request, reply) => {
@@ -461,23 +459,21 @@ export const registerFuelRoutes = (
       }))
     )
       return reply.code(404).send({ message: 'Station not found.' });
-    return reply
-      .code(201)
-      .send(
-        await prisma.expense.create({
-          data: {
-            id: randomUUID(),
-            stationId: input.stationId,
-            category: input.category,
-            description: input.description,
-            amount: input.amount,
-            method: input.method,
-            spentAt: input.spentAt ?? new Date(),
-            reference: input.reference,
-            createdBy: user.id,
-          },
-        })
-      );
+    return reply.code(201).send(
+      await prisma.expense.create({
+        data: {
+          id: randomUUID(),
+          stationId: input.stationId,
+          category: input.category,
+          description: input.description,
+          amount: input.amount,
+          method: input.method,
+          spentAt: input.spentAt ?? new Date(),
+          reference: input.reference,
+          createdBy: user.id,
+        },
+      })
+    );
   });
 
   app.get('/api/v1/fuel/inventory/:stationId', async (request, reply) => {

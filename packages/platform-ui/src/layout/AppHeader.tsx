@@ -81,7 +81,13 @@ const AppHeader: React.FC<AppHeaderProps> = ({ config, projectDetails }) => {
             aria-label="Toggle Sidebar"
           >
             {isMobileOpen ? (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -90,7 +96,13 @@ const AppHeader: React.FC<AppHeaderProps> = ({ config, projectDetails }) => {
                 />
               </svg>
             ) : (
-              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg
+                width="16"
+                height="12"
+                viewBox="0 0 16 12"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -128,7 +140,13 @@ const AppHeader: React.FC<AppHeaderProps> = ({ config, projectDetails }) => {
             aria-label="Toggle application menu"
             className="z-99999 size-10 rounded-lg text-gray-700 shadow-none hover:bg-gray-100 lg:hidden dark:text-gray-400 dark:hover:bg-gray-800 [&_svg]:size-auto"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"

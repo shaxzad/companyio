@@ -240,7 +240,10 @@ export const UpdateManagedUserSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-export const authErrorMessage = (caught: unknown, fallback = 'The request could not be completed.') => {
+export const authErrorMessage = (
+  caught: unknown,
+  fallback = 'The request could not be completed.'
+) => {
   if (
     caught &&
     typeof caught === 'object' &&

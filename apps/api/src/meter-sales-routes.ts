@@ -28,7 +28,12 @@ const requireUser = async (
 
 const toYmd = (value: Date) => value.toISOString().slice(0, 10);
 
-const rateFor = async (prisma: PrismaClient, fuelTypeId: string, businessDate: Date, fallback: unknown) => {
+const rateFor = async (
+  prisma: PrismaClient,
+  fuelTypeId: string,
+  businessDate: Date,
+  fallback: unknown
+) => {
   const dated = await prisma.sellingRate.findFirst({
     where: { fuelTypeId, effectiveFrom: { lte: businessDate } },
     orderBy: { effectiveFrom: 'desc' },
@@ -39,7 +44,10 @@ const rateFor = async (prisma: PrismaClient, fuelTypeId: string, businessDate: D
 const productTotals = (
   lines: Array<{ productCode: string; productName: string; litres: number; amount: number }>
 ) => {
-  const totals = new Map<string, { productCode: string; productName: string; litres: number; amount: number }>();
+  const totals = new Map<
+    string,
+    { productCode: string; productName: string; litres: number; amount: number }
+  >();
   lines.forEach((line) => {
     const current = totals.get(line.productCode) ?? {
       productCode: line.productCode,
@@ -62,9 +70,7 @@ export const registerMeterSalesRoutes = (
   app.get('/api/v1/fuel/meter-sales/sheet', async (request, reply) => {
     const user = await requireUser(request, reply, authenticate);
     if (!user) return;
-    const query = z
-      .object({ stationId: id, businessDayId: id.optional() })
-      .parse(request.query);
+    const query = z.object({ stationId: id, businessDayId: id.optional() }).parse(request.query);
     const station = await prisma.station.findFirst({
       where: { id: query.stationId, businessId: user.main_business_id },
     });
@@ -232,7 +238,9 @@ export const registerMeterSalesRoutes = (
       where: { businessDayId: day.id, saleType: 'CASH', organizationId: null },
     });
     if (already)
-      return reply.code(409).send({ message: 'Meter sales for this business date are already posted.' });
+      return reply
+        .code(409)
+        .send({ message: 'Meter sales for this business date are already posted.' });
 
     const meterByNozzle = new Map(day.meters.map((meter) => [meter.nozzleId, meter]));
     if (day.meters.length !== input.lines.length)
@@ -287,7 +295,9 @@ export const registerMeterSalesRoutes = (
         litres,
         amount: round(litres * unitPrice, 2),
         rateOverrideReason:
-          round(unitPrice, 2) !== round(suggestedRate, 2) ? (line.rateOverrideReason ?? null) : null,
+          round(unitPrice, 2) !== round(suggestedRate, 2)
+            ? (line.rateOverrideReason ?? null)
+            : null,
         productCode: meter.nozzle.fuelType.code,
         productName: meter.nozzle.fuelType.name,
       });

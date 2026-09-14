@@ -42,7 +42,7 @@ describe('authentication contracts', () => {
     expect(canApprove('staff')).toBe(false);
   });
 
-              it('requires a role and password when the owner creates a user', () => {
+  it('requires a role and password when the owner creates a user', () => {
     expect(
       CreateManagedUserSchema.parse({
         name: 'Cashier',
@@ -51,9 +51,10 @@ describe('authentication contracts', () => {
         role: 'staff',
       })
     ).toMatchObject({ role: 'staff' });
-    expect(
-      UpdateManagedUserSchema.parse({ isActive: false, role: 'accountant' })
-    ).toEqual({ isActive: false, role: 'accountant' });
+    expect(UpdateManagedUserSchema.parse({ isActive: false, role: 'accountant' })).toEqual({
+      isActive: false,
+      role: 'accountant',
+    });
   });
 
   it('requires a concrete fuel role on parsed users', () => {

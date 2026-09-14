@@ -127,7 +127,10 @@ export const registerCreditRoutes = (
       }),
     ]);
 
-    if (!station) return sendApiError(reply, 400, 'Station not found.', { fields: { stationId: 'Station not found.' } });
+    if (!station)
+      return sendApiError(reply, 400, 'Station not found.', {
+        fields: { stationId: 'Station not found.' },
+      });
     if (!organization)
       return sendApiError(reply, 400, 'Company not found or inactive.', {
         fields: { organizationId: 'Company not found or inactive.' },
@@ -137,7 +140,9 @@ export const registerCreditRoutes = (
         fields: { vehicleId: 'Vehicle does not belong to the selected company.' },
       });
     if (!fuelType)
-      return sendApiError(reply, 400, 'Product not found.', { fields: { fuelTypeId: 'Product not found.' } });
+      return sendApiError(reply, 400, 'Product not found.', {
+        fields: { fuelTypeId: 'Product not found.' },
+      });
     if (!tank || tank.stationId !== station.id || tank.fuelTypeId !== fuelType.id)
       return sendApiError(reply, 400, 'Station, tank, and product do not match.', {
         fields: { tankId: 'Station, tank, and product do not match.' },
@@ -158,8 +163,7 @@ export const registerCreditRoutes = (
     const year = new Date().getFullYear();
     const saleNumber = `CR-${year}-${stamp}`;
     const invoiceNumber = `INV-${year}-${stamp}`;
-    const driverName =
-      (input.driverName && input.driverName.trim()) || vehicle.driver || null;
+    const driverName = (input.driverName && input.driverName.trim()) || vehicle.driver || null;
 
     const created = await prisma.$transaction(async (tx) => {
       const updatedTank = await tx.tank.update({
@@ -274,29 +278,25 @@ export const registerCreditRoutes = (
         reference: 'OPENING',
         description: 'Opening balance',
       },
-      ...organization.sales.map(
-        (sale): LedgerDraft => ({
-          date: sale.soldAt,
-          type: 'CREDIT',
-          debit: num(sale.totalAmount),
-          credit: 0,
-          reference: sale.invoiceNumber ?? sale.saleNumber,
-          description: `${sale.vehicle?.registration ?? 'Vehicle'} · ${sale.lines
-            .map((line) => line.fuelType.code)
-            .join(', ')}`,
-          saleId: sale.id,
-        })
-      ),
-      ...organization.payments.map(
-        (payment): LedgerDraft => ({
-          date: payment.paidAt,
-          type: 'PAYMENT',
-          debit: 0,
-          credit: num(payment.amount),
-          reference: payment.reference ?? payment.id,
-          description: `${payment.method} payment`,
-        })
-      ),
+      ...organization.sales.map((sale): LedgerDraft => ({
+        date: sale.soldAt,
+        type: 'CREDIT',
+        debit: num(sale.totalAmount),
+        credit: 0,
+        reference: sale.invoiceNumber ?? sale.saleNumber,
+        description: `${sale.vehicle?.registration ?? 'Vehicle'} · ${sale.lines
+          .map((line) => line.fuelType.code)
+          .join(', ')}`,
+        saleId: sale.id,
+      })),
+      ...organization.payments.map((payment): LedgerDraft => ({
+        date: payment.paidAt,
+        type: 'PAYMENT',
+        debit: 0,
+        credit: num(payment.amount),
+        reference: payment.reference ?? payment.id,
+        description: `${payment.method} payment`,
+      })),
     ];
     entries.sort((left, right) => left.date.getTime() - right.date.getTime());
 

@@ -164,7 +164,12 @@ export const registerMasterDataRoutes = (
     if (!station) return reply.code(404).send({ message: 'Station not found.' });
     return reply.code(201).send(
       await prisma.pump.create({
-        data: { id: randomUUID(), stationId: input.stationId, number: input.number, name: input.name },
+        data: {
+          id: randomUUID(),
+          stationId: input.stationId,
+          number: input.number,
+          name: input.name,
+        },
       })
     );
   });
@@ -325,7 +330,9 @@ export const registerMasterDataRoutes = (
     });
     if (!row) return sendApiError(reply, 404, 'Denomination not found.', { code: 'NOT_FOUND' });
     try {
-      return reply.send(await prisma.cashDenomination.update({ where: { id: row.id }, data: input }));
+      return reply.send(
+        await prisma.cashDenomination.update({ where: { id: row.id }, data: input })
+      );
     } catch (error) {
       if ((error as { code?: string }).code === 'P2002') {
         return sendApiError(reply, 409, 'That denomination already exists.', {

@@ -10,7 +10,16 @@ export type InputProps = React.ComponentProps<'input'> & {
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   (
-    { className, type = 'text', error = false, success = false, hint, onKeyDown, onWheel, ...props },
+    {
+      className,
+      type = 'text',
+      error = false,
+      success = false,
+      hint,
+      onKeyDown,
+      onWheel,
+      ...props
+    },
     ref
   ) => {
     const isNumber = type === 'number';

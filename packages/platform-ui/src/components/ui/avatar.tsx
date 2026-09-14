@@ -38,34 +38,36 @@ const Avatar = React.forwardRef<
     size?: AvatarSize;
     status?: AvatarStatus;
   }
->(({ className, src, alt = 'User Avatar', size = 'medium', status = 'none', children, ...props }, ref) => (
-  <span className={cn('relative inline-flex shrink-0', sizeClasses[size])}>
-    <AvatarPrimitive.Root
-      ref={ref}
-      className={cn(
-        'relative flex size-full shrink-0 overflow-hidden rounded-full',
-        className
-      )}
-      {...props}
-    >
-      {children ?? (
-        <>
-          {src ? <AvatarImage src={src} alt={alt} /> : null}
-          <AvatarFallback>{alt.charAt(0)}</AvatarFallback>
-        </>
-      )}
-    </AvatarPrimitive.Root>
-    {status !== 'none' && (
-      <span
-        className={cn(
-          'absolute bottom-0 end-0 rounded-full border-[1.5px] border-white dark:border-gray-900',
-          statusSizeClasses[size],
-          statusColorClasses[status]
+>(
+  (
+    { className, src, alt = 'User Avatar', size = 'medium', status = 'none', children, ...props },
+    ref
+  ) => (
+    <span className={cn('relative inline-flex shrink-0', sizeClasses[size])}>
+      <AvatarPrimitive.Root
+        ref={ref}
+        className={cn('relative flex size-full shrink-0 overflow-hidden rounded-full', className)}
+        {...props}
+      >
+        {children ?? (
+          <>
+            {src ? <AvatarImage src={src} alt={alt} /> : null}
+            <AvatarFallback>{alt.charAt(0)}</AvatarFallback>
+          </>
         )}
-      />
-    )}
-  </span>
-));
+      </AvatarPrimitive.Root>
+      {status !== 'none' && (
+        <span
+          className={cn(
+            'absolute bottom-0 end-0 rounded-full border-[1.5px] border-white dark:border-gray-900',
+            statusSizeClasses[size],
+            statusColorClasses[status]
+          )}
+        />
+      )}
+    </span>
+  )
+);
 Avatar.displayName = AvatarPrimitive.Root.displayName;
 
 const AvatarImage = React.forwardRef<

@@ -40,15 +40,8 @@ export { Button as ButtonGroup } from './components/ui/button';
 export { Input, type InputProps } from './components/ui/input';
 export { Label } from './components/ui/label';
 export { FormField, type FormFieldProps } from './components/ui/form-field';
-export {
-  DataTable,
-  type DataTableColumn,
-  type DataTableProps,
-} from './components/ui/data-table';
-export {
-  ConfirmDialog,
-  type ConfirmDialogProps,
-} from './components/ui/confirm-dialog';
+export { DataTable, type DataTableColumn, type DataTableProps } from './components/ui/data-table';
+export { ConfirmDialog, type ConfirmDialogProps } from './components/ui/confirm-dialog';
 export {
   ActionSpinner,
   KpiCard,

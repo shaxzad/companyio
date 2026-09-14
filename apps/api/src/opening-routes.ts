@@ -243,8 +243,7 @@ export const registerOpeningRoutes = (
     const already = await prisma.businessDay.findUnique({
       where: { stationId_businessDate: { stationId: station.id, businessDate } },
     });
-    if (already)
-      return reply.code(409).send({ message: 'This business date is already opened.' });
+    if (already) return reply.code(409).send({ message: 'This business date is already opened.' });
 
     const previous = await prisma.businessDay.findFirst({
       where: { stationId: station.id, businessDate: { lt: businessDate } },

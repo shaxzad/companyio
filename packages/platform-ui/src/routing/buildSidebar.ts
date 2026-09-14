@@ -1,9 +1,5 @@
 import type { SidebarNavItem, SidebarSubItem } from '../layout/types';
-import {
-  DEFAULT_MAIN_POSITIONS,
-  DEFAULT_OTHERS_POSITIONS,
-  filterRoutes,
-} from './filterRoutes';
+import { DEFAULT_MAIN_POSITIONS, DEFAULT_OTHERS_POSITIONS, filterRoutes } from './filterRoutes';
 import type { AppRouteModule, BuildSidebarFromRoutesOptions, MenuPosition } from './types';
 
 type GroupBucket = {
@@ -19,8 +15,7 @@ type GroupBucket = {
 const normalizePosition = (position: MenuPosition | undefined): MenuPosition =>
   position ?? 'middle';
 
-const inPositions = (position: MenuPosition, allowed: MenuPosition[]) =>
-  allowed.includes(position);
+const inPositions = (position: MenuPosition, allowed: MenuPosition[]) => allowed.includes(position);
 
 /**
  * Turn an `AppRouteModule[]` into sidebar `navItems` / `othersItems`.
@@ -108,9 +103,7 @@ export const buildSidebarFromRoutes = (
       permissions: group.permissions,
       priority: group.priority,
       position: group.position === 'lower' || group.position === 'bottom' ? 'others' : 'main',
-      subItems: group.subItems.sort(
-        (left, right) => (left.priority ?? 0) - (right.priority ?? 0)
-      ),
+      subItems: group.subItems.sort((left, right) => (left.priority ?? 0) - (right.priority ?? 0)),
     });
   }
 

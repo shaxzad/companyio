@@ -289,7 +289,11 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ config }) => {
         </Link>
 
         {!showExpandedContent && (
-          <Link to={config.projectDetails?.href ?? '/'} className="hidden lg:flex" aria-label="Home">
+          <Link
+            to={config.projectDetails?.href ?? '/'}
+            className="hidden lg:flex"
+            aria-label="Home"
+          >
             {config.projectDetails?.collapsedLogo ? (
               <img
                 src={config.projectDetails.collapsedLogo}
@@ -314,7 +318,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ config }) => {
           aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
         >
           <ChevronLeftIcon
-            className={cn('transition-transform duration-300 ease-in-out', !isExpanded && 'rotate-180')}
+            className={cn(
+              'transition-transform duration-300 ease-in-out',
+              !isExpanded && 'rotate-180'
+            )}
           />
         </Button>
       </div>
