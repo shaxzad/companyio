@@ -1,6 +1,6 @@
 {
   "name": "@companyio/auth-react",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "description": "React provider and hooks for the shared authentication platform",
   "type": "module",
   "main": "dist/index.js",
@@ -17,6 +17,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "test": "tsc --noEmit"
   },
   "dependencies": {

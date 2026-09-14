@@ -1,6 +1,6 @@
 {
   "name": "@companyio/auth-contracts",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "description": "Shared authentication, user, organization, and permission contracts",
   "type": "module",
   "main": "dist/index.js",
@@ -17,6 +17,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "test": "vitest run"
   },
   "dependencies": {

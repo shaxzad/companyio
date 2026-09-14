@@ -1,6 +1,6 @@
 {
   "name": "@companyio/auth-client",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "description": "Platform-neutral authentication and user-management client",
   "type": "module",
   "main": "dist/index.js",
@@ -17,6 +17,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "test": "vitest run"
   },
   "dependencies": {
