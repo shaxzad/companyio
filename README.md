@@ -387,6 +387,7 @@ pnpm dev
 # Individual package usage
 pnpm --filter @companyio/platform-ui dev
 pnpm --filter @companyio/auth-react dev
+pnpm --filter @companyio/api dev
 ```
 
 ### Development Commands

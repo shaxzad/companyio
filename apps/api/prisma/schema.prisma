@@ -19,6 +19,7 @@ model Business {
   organizations      Organization[]
   cashDenominations  CashDenomination[]
   paymentAccounts    PaymentAccount[]
+  expenseCategories  ExpenseCategory[]
 }
 
 model Branch {
@@ -435,20 +436,47 @@ model Payment {
   @@index([paymentAccountId])
 }
 
+/// Configurable expense categories for Feature 9 (Concept B — cash paid out).
+model ExpenseCategory {
+  id         String    @id
+  businessId String
+  name       String
+  code       String
+  sortOrder  Int       @default(0)
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  expenses   Expense[]
+
+  @@unique([businessId, code])
+  @@index([businessId])
+}
+
 model Expense {
-  id          String        @id
-  stationId   String
-  category    String
-  description String
-  amount      Decimal       @db.Decimal(14, 2)
-  method      PaymentMethod
-  spentAt     DateTime
-  reference   String?
-  createdBy   String
-  createdAt   DateTime      @default(now())
-  station     Station       @relation(fields: [stationId], references: [id])
+  id                 String           @id
+  stationId          String
+  categoryId         String?
+  /// Denormalized category label (and legacy rows without categoryId).
+  category           String
+  name               String           @default("")
+  description        String
+  amount             Decimal          @db.Decimal(14, 2)
+  method             PaymentMethod
+  spentAt            DateTime
+  reference          String?
+  /// Optional attachment URL / path (upload storage is out of F9 scope).
+  attachmentUrl      String?
+  /// When true, amount feeds Daily Closing “Cash Paid Out” (paper form “Total Credits”).
+  paidFromTodaysCash Boolean          @default(true)
+  createdBy          String
+  createdAt          DateTime         @default(now())
+  station            Station          @relation(fields: [stationId], references: [id])
+  expenseCategory    ExpenseCategory? @relation(fields: [categoryId], references: [id])
 
   @@index([stationId, spentAt])
+  @@index([categoryId])
+  @@index([stationId, paidFromTodaysCash, spentAt])
 }
 
 enum BusinessDayStatus {
