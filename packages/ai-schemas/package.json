@@ -1,6 +1,6 @@
 {
   "name": "@companyio/ai-schemas",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "private": true,
   "description": "AI validation schemas using Zod",
   "type": "module",
