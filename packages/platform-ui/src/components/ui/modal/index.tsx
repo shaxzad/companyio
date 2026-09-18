@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { cn } from '../../../lib/utils';
 
 interface ModalProps {
   isOpen: boolean;
@@ -52,16 +53,17 @@ export const Modal: React.FC<ModalProps> = ({
 
   if (!isOpen) return null;
 
-  const contentClasses = isFullscreen
-    ? 'w-full h-full'
-    : 'relative w-full rounded-3xl bg-white dark:bg-gray-900';
-
   return (
-    <div className="fixed inset-0 z-99999 flex items-center justify-center overflow-y-auto modal">
+    <div className="fixed inset-0 z-99999 flex items-center justify-center overflow-y-auto p-4 modal">
       {!isFullscreen && <div className={overlayClassName} onClick={onClose} />}
       <div
         ref={modalRef}
-        className={`${contentClasses} ${className}`}
+        className={cn(
+          isFullscreen
+            ? 'h-full w-full'
+            : 'relative mx-auto w-full max-w-md rounded-3xl bg-white dark:bg-gray-900',
+          className
+        )}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

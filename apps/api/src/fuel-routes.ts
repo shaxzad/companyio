@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import type { PrismaClient } from './generated/prisma/client.ts';
 import type { User as AuthUser } from '@companyio/auth-contracts';
+import { sendApiError } from './http-errors.ts';
 
 const id = z.string().min(1);
 const positive = z.number().positive();
@@ -16,8 +17,8 @@ const stationInput = z.object({
 });
 
 const fuelTypeInput = z.object({
-  name: z.string().min(1).max(80),
-  code: z.string().min(1).max(20),
+  name: z.string().trim().min(1).max(80),
+  code: z.string().trim().min(1).max(20),
   sellingPrice: positive,
   purchasePrice: positive,
   minimumStock: z.number().nonnegative(),
@@ -225,13 +226,44 @@ export const registerFuelRoutes = (
     if (user.role !== 'owner')
       return reply.code(403).send({ message: 'Only the owner can change master data.' });
     const input = fuelTypeInput.parse(request.body);
+    const name = input.name.trim();
+    const code = input.code.trim().toUpperCase();
+
+    const duplicateName = await prisma.fuelType.findFirst({
+      where: {
+        businessId: user.main_business_id,
+        name: { equals: name, mode: 'insensitive' },
+      },
+    });
+    if (duplicateName) {
+      return sendApiError(
+        reply,
+        409,
+        `A product named “${duplicateName.name}” already exists. Use one Petrol / Diesel product and edit its rates instead.`,
+        { code: 'DUPLICATE_NAME', fields: { name: 'This product name is already used.' } }
+      );
+    }
+
+    const duplicateCode = await prisma.fuelType.findFirst({
+      where: {
+        businessId: user.main_business_id,
+        code: { equals: code, mode: 'insensitive' },
+      },
+    });
+    if (duplicateCode) {
+      return sendApiError(reply, 409, `Product code “${duplicateCode.code}” is already used.`, {
+        code: 'DUPLICATE_CODE',
+        fields: { code: 'This product code is already used.' },
+      });
+    }
+
     return reply.code(201).send(
       await prisma.fuelType.create({
         data: {
           id: randomUUID(),
           businessId: user.main_business_id,
-          name: input.name,
-          code: input.code,
+          name,
+          code,
           sellingPrice: input.sellingPrice,
           purchasePrice: input.purchasePrice,
           minimumStock: input.minimumStock,

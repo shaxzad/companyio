@@ -6,6 +6,7 @@ import { randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } fr
 import { promisify } from 'node:util';
 import { PrismaClient, type User as DatabaseUser } from './generated/prisma/client.ts';
 import { z } from 'zod';
+import { registerAdvanceRoutes } from './advance-routes.ts';
 import { registerCreditRoutes } from './credit-routes.ts';
 import { registerExpenseRoutes } from './expense-routes.ts';
 import { registerFuelRoutes } from './fuel-routes.ts';
@@ -307,6 +308,7 @@ registerOrganizationRoutes(app, prisma, getAuthenticatedUser);
 registerCreditRoutes(app, prisma, getAuthenticatedUser);
 registerPaymentRoutes(app, prisma, getAuthenticatedUser);
 registerExpenseRoutes(app, prisma, getAuthenticatedUser);
+registerAdvanceRoutes(app, prisma, getAuthenticatedUser);
 registerMasterDataRoutes(app, prisma, getAuthenticatedUser);
 registerOpeningRoutes(app, prisma, getAuthenticatedUser);
 registerMeterSalesRoutes(app, prisma, getAuthenticatedUser);
