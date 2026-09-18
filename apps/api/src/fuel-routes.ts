@@ -53,16 +53,6 @@ const receiptInput = z.object({
   notes: z.string().max(500).optional(),
 });
 
-const expenseInput = z.object({
-  stationId: id,
-  category: z.string().min(1).max(80),
-  description: z.string().min(1).max(240),
-  amount: positive,
-  method: z.enum(['CASH', 'BANK', 'CARD', 'TRANSFER']),
-  spentAt: date.optional(),
-  reference: z.string().max(120).optional(),
-});
-
 const closingInput = z.object({
   stationId: id,
   businessDate: date,
@@ -447,33 +437,6 @@ export const registerFuelRoutes = (
       return created;
     });
     return reply.code(201).send(receipt);
-  });
-
-  app.post('/api/v1/fuel/expenses', async (request, reply) => {
-    const user = await requireUser(request, reply, authenticate);
-    if (!user) return;
-    const input = expenseInput.parse(request.body);
-    if (
-      !(await prisma.station.findFirst({
-        where: { id: input.stationId, businessId: user.main_business_id },
-      }))
-    )
-      return reply.code(404).send({ message: 'Station not found.' });
-    return reply.code(201).send(
-      await prisma.expense.create({
-        data: {
-          id: randomUUID(),
-          stationId: input.stationId,
-          category: input.category,
-          description: input.description,
-          amount: input.amount,
-          method: input.method,
-          spentAt: input.spentAt ?? new Date(),
-          reference: input.reference,
-          createdBy: user.id,
-        },
-      })
-    );
   });
 
   app.get('/api/v1/fuel/inventory/:stationId', async (request, reply) => {

@@ -25,14 +25,14 @@ const LayoutContent: React.FC<AppLayoutProps> = ({ config }) => {
   );
 
   return (
-    <div className="min-h-screen xl:flex">
+    <div className="min-h-screen bg-white dark:bg-gray-950 xl:flex">
       <div>
         <AppSidebar config={sidebarConfig} />
         <Backdrop />
       </div>
       <div
         className={cn(
-          'flex-1 transition-[margin] duration-300 ease-in-out',
+          'flex-1 bg-white transition-[margin] duration-300 ease-in-out dark:bg-gray-950',
           isExpanded ? 'lg:ms-[260px]' : 'lg:ms-[72px]',
           isMobileOpen && 'ms-0'
         )}
