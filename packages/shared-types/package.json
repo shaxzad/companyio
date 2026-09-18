@@ -1,6 +1,6 @@
 {
   "name": "@companyio/shared-types",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "description": "Shared TypeScript types",
   "type": "module",
   "main": "dist/index.js",
