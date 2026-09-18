@@ -77,8 +77,8 @@ export const registerMasterDataRoutes = (
     const params = z.object({ id }).parse(request.params);
     const input = z
       .object({
-        name: z.string().min(1).max(80).optional(),
-        code: z.string().min(1).max(20).optional(),
+        name: z.string().trim().min(1).max(80).optional(),
+        code: z.string().trim().min(1).max(20).optional(),
         sellingPrice: z.number().positive().optional(),
         purchasePrice: z.number().positive().optional(),
         minimumStock: z.number().nonnegative().optional(),
@@ -90,6 +90,43 @@ export const registerMasterDataRoutes = (
       where: { id: params.id, businessId: user.main_business_id },
     });
     if (!fuelType) return reply.code(404).send({ message: 'Product not found.' });
+
+    if (input.name !== undefined) {
+      const duplicateName = await prisma.fuelType.findFirst({
+        where: {
+          businessId: user.main_business_id,
+          id: { not: fuelType.id },
+          name: { equals: input.name, mode: 'insensitive' },
+        },
+      });
+      if (duplicateName) {
+        return sendApiError(
+          reply,
+          409,
+          `A product named “${duplicateName.name}” already exists. Keep one name per fuel (e.g. one Petrol).`,
+          { code: 'DUPLICATE_NAME', fields: { name: 'This product name is already used.' } }
+        );
+      }
+    }
+
+    if (input.code !== undefined) {
+      const code = input.code.toUpperCase();
+      const duplicateCode = await prisma.fuelType.findFirst({
+        where: {
+          businessId: user.main_business_id,
+          id: { not: fuelType.id },
+          code: { equals: code, mode: 'insensitive' },
+        },
+      });
+      if (duplicateCode) {
+        return sendApiError(reply, 409, `Product code “${duplicateCode.code}” is already used.`, {
+          code: 'DUPLICATE_CODE',
+          fields: { code: 'This product code is already used.' },
+        });
+      }
+      input.code = code;
+    }
+
     return reply.send(
       await prisma.fuelType.update({
         where: { id: fuelType.id },

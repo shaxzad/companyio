@@ -20,6 +20,8 @@ model Business {
   cashDenominations  CashDenomination[]
   paymentAccounts    PaymentAccount[]
   expenseCategories  ExpenseCategory[]
+  employees          Employee[]
+  monthlyObligations MonthlyObligation[]
 }
 
 model Branch {
@@ -149,6 +151,7 @@ model FuelType {
   sellingRates  SellingRate[]
 
   @@unique([businessId, code])
+  @@unique([businessId, name])
   @@index([businessId])
 }
 
@@ -451,6 +454,67 @@ model ExpenseCategory {
 
   @@unique([businessId, code])
   @@index([businessId])
+}
+
+/// Pump staff / people who receive salary advances (Feature 10).
+model Employee {
+  id                   String              @id
+  businessId           String
+  name                 String
+  code                 String?
+  defaultMonthlySalary Decimal             @default(0) @db.Decimal(14, 2)
+  active               Boolean             @default(true)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  business             Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  obligations          MonthlyObligation[]
+
+  @@unique([businessId, name])
+  @@index([businessId])
+}
+
+enum ObligationKind {
+  RENT
+  SALARY
+}
+
+/// One rent or salary obligation for a calendar month (Feature 10).
+model MonthlyObligation {
+  id            String               @id
+  businessId    String
+  stationId     String?
+  kind          ObligationKind
+  /// "RENT" for rent rows; employee id for salary rows (unique scope).
+  scopeKey      String
+  employeeId    String?
+  yearMonth     String
+  monthlyAmount Decimal              @db.Decimal(14, 2)
+  notes         String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  business      Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  employee      Employee?            @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  payments      ObligationPayment[]
+
+  @@unique([businessId, kind, scopeKey, yearMonth])
+  @@index([businessId, yearMonth])
+  @@index([employeeId])
+}
+
+model ObligationPayment {
+  id           String            @id
+  obligationId String
+  amount       Decimal           @db.Decimal(14, 2)
+  method       PaymentMethod
+  paidAt       DateTime
+  notes        String?
+  /// Marks this as the closing / final payment for the month.
+  isFinal      Boolean           @default(false)
+  createdBy    String
+  createdAt    DateTime          @default(now())
+  obligation   MonthlyObligation @relation(fields: [obligationId], references: [id], onDelete: Cascade)
+
+  @@index([obligationId, paidAt])
 }
 
 model Expense {
