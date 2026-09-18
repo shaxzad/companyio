@@ -251,7 +251,8 @@ export const registerExpenseRoutes = (
     });
     if (!station) return reply.code(404).send({ message: 'Station not found.' });
 
-    const ymd = query.businessDate ?? new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Karachi' });
+    const ymd =
+      query.businessDate ?? new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Karachi' });
     const { start, end } = karachiDayBounds(ymd);
     const monthStart = new Date(`${ymd.slice(0, 7)}-01T00:00:00.000+05:00`);
     const monthEnd = end;
