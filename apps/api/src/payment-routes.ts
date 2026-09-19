@@ -4,6 +4,8 @@ import { z } from 'zod';
 import type { PrismaClient } from './generated/prisma/client.ts';
 import type { User as AuthUser } from '@companyio/auth-contracts';
 import { sendApiError } from './http-errors.ts';
+import { assertDayChangeAllowed, writeAuditLog } from './audit.ts';
+import { toYmdKarachi } from './stock-recon.ts';
 
 type Authenticator = (authorization?: string) => Promise<AuthUser | null>;
 
@@ -339,6 +341,7 @@ export const registerPaymentRoutes = (
         reference: z.string().trim().max(120).optional().or(z.literal('')),
         paidAt: date.optional(),
         notes: z.string().trim().max(500).optional().or(z.literal('')),
+        auditReason: z.string().min(8).max(500).optional(),
       })
       .parse(request.body);
 
@@ -350,6 +353,14 @@ export const registerPaymentRoutes = (
         fields: { stationId: 'Station not found.' },
       });
     }
+
+    const paidAt = input.paidAt ?? new Date();
+    const lock = await assertDayChangeAllowed(prisma, reply, {
+      stationId: station.id,
+      businessDateYmd: toYmdKarachi(paidAt),
+      auditReason: input.auditReason,
+    });
+    if (!lock.allowed) return;
 
     const account = await prisma.paymentAccount.findFirst({
       where: {
@@ -400,7 +411,7 @@ export const registerPaymentRoutes = (
         quantity: input.quantity ?? 1,
         method: account.kind,
         reference: input.reference || null,
-        paidAt: input.paidAt ?? new Date(),
+        paidAt,
         notes: input.notes || null,
         createdBy: user.id!,
       },
@@ -410,6 +421,21 @@ export const registerPaymentRoutes = (
         sale: { select: { id: true, invoiceNumber: true, saleNumber: true } },
       },
     });
+
+    if (lock.reason) {
+      await writeAuditLog(prisma, {
+        businessId: user.main_business_id,
+        userId: user.id!,
+        action: 'CREATE',
+        entityType: 'PAYMENT',
+        entityId: created.id,
+        details: {
+          reason: lock.reason,
+          dayStatus: lock.dayStatus,
+          after: { amount: input.amount, paidAt: paidAt.toISOString() },
+        },
+      });
+    }
 
     return reply.code(201).send(serializePayment(created));
   });

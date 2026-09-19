@@ -4,6 +4,8 @@ import { z } from 'zod';
 import type { PrismaClient } from './generated/prisma/client.ts';
 import type { User as AuthUser } from '@companyio/auth-contracts';
 import { sendApiError } from './http-errors.ts';
+import { assertDayChangeAllowed, writeAuditLog } from './audit.ts';
+import { toYmdKarachi } from './stock-recon.ts';
 
 type Authenticator = (authorization?: string) => Promise<AuthUser | null>;
 
@@ -314,6 +316,7 @@ export const registerExpenseRoutes = (
         reference: z.string().max(120).optional(),
         attachmentUrl: z.string().max(500).optional(),
         paidFromTodaysCash: z.boolean().optional().default(true),
+        auditReason: z.string().min(8).max(500).optional(),
       })
       .parse(request.body);
 
@@ -321,6 +324,14 @@ export const registerExpenseRoutes = (
       where: { id: input.stationId, businessId: user.main_business_id },
     });
     if (!station) return reply.code(404).send({ message: 'Station not found.' });
+
+    const spentAt = input.spentAt ?? new Date();
+    const lock = await assertDayChangeAllowed(prisma, reply, {
+      stationId: station.id,
+      businessDateYmd: toYmdKarachi(spentAt),
+      auditReason: input.auditReason,
+    });
+    if (!lock.allowed) return;
 
     let categoryLabel = input.category?.trim() ?? '';
     let categoryId: string | null = null;
@@ -360,7 +371,7 @@ export const registerExpenseRoutes = (
         description: input.description?.trim() || input.name.trim(),
         amount: input.amount,
         method: input.method,
-        spentAt: input.spentAt ?? new Date(),
+        spentAt,
         reference: input.reference?.trim() || null,
         attachmentUrl: input.attachmentUrl?.trim() || null,
         paidFromTodaysCash: input.paidFromTodaysCash ?? true,
@@ -368,6 +379,21 @@ export const registerExpenseRoutes = (
       },
       include: { expenseCategory: { select: { id: true, name: true, code: true } } },
     });
+
+    if (lock.reason) {
+      await writeAuditLog(prisma, {
+        businessId: user.main_business_id,
+        userId: user.id,
+        action: 'CREATE',
+        entityType: 'EXPENSE',
+        entityId: created.id,
+        details: {
+          reason: lock.reason,
+          dayStatus: lock.dayStatus,
+          after: { amount: input.amount, name: input.name, spentAt: spentAt.toISOString() },
+        },
+      });
+    }
 
     return reply.code(201).send(serializeExpense(created));
   });

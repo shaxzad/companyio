@@ -4,6 +4,8 @@ import { z } from 'zod';
 import type { PrismaClient } from './generated/prisma/client.ts';
 import type { User as AuthUser } from '@companyio/auth-contracts';
 import { sendApiError } from './http-errors.ts';
+import { assertDayChangeAllowed } from './audit.ts';
+import { syncBusinessDayTankClosing, toYmdKarachi } from './stock-recon.ts';
 
 type Authenticator = (authorization?: string) => Promise<AuthUser | null>;
 
@@ -152,6 +154,7 @@ export const registerReceivingRoutes = (
         otherReceivingCost: z.number().nonnegative().default(0),
         receivedAt: z.coerce.date().optional(),
         notes: z.string().max(500).optional(),
+        auditReason: z.string().min(8).max(500).optional(),
       })
       .parse(request.body);
 
@@ -175,12 +178,20 @@ export const registerReceivingRoutes = (
       return reply.code(400).send({ message: 'Station, tank, and product do not match.' });
 
     let businessDayId = input.businessDayId ?? null;
+    let lockedReason: string | null = null;
     if (businessDayId) {
       const day = await prisma.businessDay.findFirst({
-        where: { id: businessDayId, stationId: station.id, status: 'OPEN' },
+        where: { id: businessDayId, stationId: station.id },
       });
       if (!day)
-        return reply.code(409).send({ message: 'Open business day not found for this station.' });
+        return reply.code(409).send({ message: 'Business day not found for this station.' });
+      const lock = await assertDayChangeAllowed(prisma, reply as never, {
+        stationId: station.id,
+        businessDateYmd: toYmdKarachi(day.businessDate),
+        auditReason: input.auditReason,
+      });
+      if (!lock.allowed) return;
+      lockedReason = lock.reason;
     } else {
       const openDay = await prisma.businessDay.findFirst({
         where: { stationId: station.id, status: 'OPEN' },
@@ -254,10 +265,7 @@ export const registerReceivingRoutes = (
           },
         });
         if (businessDayId) {
-          await tx.businessDayTank.updateMany({
-            where: { businessDayId, tankId: tank.id },
-            data: { closingStock: updatedTank.currentStock },
-          });
+          await syncBusinessDayTankClosing(tx, businessDayId, tank.id);
         }
         await tx.auditLog.create({
           data: {
@@ -272,6 +280,7 @@ export const registerReceivingRoutes = (
               shortageLitres,
               actualLitres: input.actualLitres,
               expectedLitres: input.expectedLitres,
+              ...(lockedReason ? { reason: lockedReason } : {}),
             },
           },
         });

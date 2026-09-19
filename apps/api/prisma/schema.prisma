@@ -12,6 +12,8 @@ model Business {
   name          String
   slug          String         @unique
   createdAt     DateTime       @default(now())
+  /// Feature 14+ Section 5 placeholders (costing, Access valuation, tanker tip P&L, etc.).
+  settings      Json?
   branches      Branch[]
   users         User[]         @relation("UserBusiness")
   stations           Station[]
@@ -120,10 +122,11 @@ model Station {
   pumps      Pump[]
   sales      Sale[]
   receipts   FuelReceipt[]
-  expenses   Expense[]
+  expenses     Expense[]
   payments     Payment[]
   closings     DailyClosing[]
   businessDays BusinessDay[]
+  cashCounts   CashCount[]
 
   @@unique([businessId, code])
   @@index([businessId])
@@ -207,16 +210,48 @@ model Nozzle {
 }
 
 model CashDenomination {
-  id         String   @id
+  id         String          @id
   businessId String
   value      Int
   label      String?
-  sortOrder  Int      @default(0)
-  active     Boolean  @default(true)
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  sortOrder  Int             @default(0)
+  active     Boolean         @default(true)
+  business   Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  countLines CashCountLine[]
 
   @@unique([businessId, value])
   @@index([businessId])
+}
+
+/// Physical cash count for a station business day (Feature 11). Feeds F13 Actual Cash later.
+model CashCount {
+  id           String          @id
+  stationId    String
+  businessDate DateTime        @db.Date
+  totalCash    Decimal         @db.Decimal(14, 2)
+  countedBy    String
+  countedAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  station      Station         @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  lines        CashCountLine[]
+
+  @@unique([stationId, businessDate])
+  @@index([stationId, businessDate])
+}
+
+model CashCountLine {
+  id             String           @id
+  cashCountId    String
+  denominationId String?
+  /// Face value snapshot at save time (survives denomination edits/deletes).
+  faceValue      Int
+  quantity       Int
+  amount         Decimal          @db.Decimal(14, 2)
+  cashCount      CashCount        @relation(fields: [cashCountId], references: [id], onDelete: Cascade)
+  denomination   CashDenomination? @relation(fields: [denominationId], references: [id], onDelete: SetNull)
+
+  @@index([cashCountId])
+  @@index([denominationId])
 }
 
 /// Configurable bank / online / card accounts for Feature 8 (not a hard-coded list).
@@ -545,6 +580,7 @@ model Expense {
 
 enum BusinessDayStatus {
   OPEN
+  RECONCILED
   CLOSED
 }
 
@@ -558,6 +594,8 @@ model BusinessDay {
   openedBy       String
   enteredAt      DateTime           @default(now())
   overrideReason String?
+  reconciledAt   DateTime?
+  reconciledBy   String?
   closedAt       DateTime?
   closedBy       String?
   station        Station            @relation(fields: [stationId], references: [id], onDelete: Cascade)
@@ -587,6 +625,8 @@ model BusinessDayTank {
   businessDayId String
   tankId        String
   openingStock  Decimal     @db.Decimal(14, 3)
+  /// Litres returned / removed without a sale (paper “Return” column).
+  returnLitres  Decimal     @default(0) @db.Decimal(14, 3)
   closingStock  Decimal?    @db.Decimal(14, 3)
   businessDay   BusinessDay @relation(fields: [businessDayId], references: [id], onDelete: Cascade)
   tank          Tank        @relation(fields: [tankId], references: [id])

@@ -4,6 +4,8 @@ import { z } from 'zod';
 import type { PrismaClient, Prisma } from './generated/prisma/client.ts';
 import type { User as AuthUser } from '@companyio/auth-contracts';
 import { sendApiError } from './http-errors.ts';
+import { assertDayChangeAllowed } from './audit.ts';
+import { syncTankClosingForStationDate, toYmdKarachi } from './stock-recon.ts';
 
 type Authenticator = (authorization?: string) => Promise<AuthUser | null>;
 
@@ -104,6 +106,7 @@ export const registerCreditRoutes = (
         driverName: z.string().trim().max(120).optional().or(z.literal('')),
         soldAt: z.coerce.date().optional(),
         notes: z.string().trim().max(500).optional().or(z.literal('')),
+        auditReason: z.string().min(8).max(500).optional(),
       })
       .parse(request.body);
 
@@ -131,6 +134,14 @@ export const registerCreditRoutes = (
       return sendApiError(reply, 400, 'Station not found.', {
         fields: { stationId: 'Station not found.' },
       });
+
+    const soldAt = input.soldAt ?? new Date();
+    const lock = await assertDayChangeAllowed(prisma, reply, {
+      stationId: station.id,
+      businessDateYmd: toYmdKarachi(soldAt),
+      auditReason: input.auditReason,
+    });
+    if (!lock.allowed) return;
     if (!organization)
       return sendApiError(reply, 400, 'Company not found or inactive.', {
         fields: { organizationId: 'Company not found or inactive.' },
@@ -180,7 +191,7 @@ export const registerCreditRoutes = (
           organizationId: organization.id,
           vehicleId: vehicle.id,
           saleType: 'CREDIT',
-          soldAt: input.soldAt ?? new Date(),
+          soldAt,
           totalAmount: amount,
           totalLitres: input.litres,
           notes: input.notes || null,
@@ -217,9 +228,16 @@ export const registerCreditRoutes = (
           action: 'CREATE',
           entityType: 'CREDIT_SALE',
           entityId: sale.id,
-          details: { invoiceNumber, saleNumber, amount, litres: input.litres },
+          details: {
+            invoiceNumber,
+            saleNumber,
+            amount,
+            litres: input.litres,
+            ...(lock.reason ? { reason: lock.reason, dayStatus: lock.dayStatus } : {}),
+          },
         },
       });
+      await syncTankClosingForStationDate(tx, station.id, toYmdKarachi(soldAt), tank.id);
       return sale;
     });
 

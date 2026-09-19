@@ -3,6 +3,8 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { PrismaClient } from './generated/prisma/client.ts';
 import type { User as AuthUser } from '@companyio/auth-contracts';
+import { assertDayChangeAllowed } from './audit.ts';
+import { syncBusinessDayTankClosing, toYmdKarachi } from './stock-recon.ts';
 
 type Authenticator = (authorization?: string) => Promise<AuthUser | null>;
 
@@ -204,6 +206,7 @@ export const registerMeterSalesRoutes = (
         stationId: id,
         businessDayId: id,
         soldAt: z.coerce.date().optional(),
+        auditReason: z.string().min(8).max(500).optional(),
         lines: z
           .array(
             z.object({
@@ -231,8 +234,13 @@ export const registerMeterSalesRoutes = (
       },
     });
     if (!day) return reply.code(404).send({ message: 'Business day not found.' });
-    if (day.status !== 'OPEN')
-      return reply.code(409).send({ message: 'This business date is closed.' });
+
+    const lock = await assertDayChangeAllowed(prisma, reply as never, {
+      stationId: station.id,
+      businessDateYmd: toYmdKarachi(day.businessDate),
+      auditReason: input.auditReason,
+    });
+    if (!lock.allowed) return;
 
     const already = await prisma.sale.findFirst({
       where: { businessDayId: day.id, saleType: 'CASH', organizationId: null },
@@ -383,6 +391,10 @@ export const registerMeterSalesRoutes = (
         });
       }
 
+      for (const tankId of litresByTank.keys()) {
+        await syncBusinessDayTankClosing(tx, day.id, tankId);
+      }
+
       await tx.auditLog.create({
         data: {
           id: randomUUID(),
@@ -391,7 +403,13 @@ export const registerMeterSalesRoutes = (
           action: 'CREATE',
           entityType: 'METER_SALE',
           entityId: created.id,
-          details: { saleNumber, totalAmount, totalLitres, businessDayId: day.id },
+          details: {
+            saleNumber,
+            totalAmount,
+            totalLitres,
+            businessDayId: day.id,
+            ...(lock.reason ? { reason: lock.reason, dayStatus: lock.dayStatus } : {}),
+          },
         },
       });
       return created;
