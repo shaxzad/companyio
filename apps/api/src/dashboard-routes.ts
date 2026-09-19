@@ -234,10 +234,7 @@ export const registerDashboardRoutes = (
     const creditOutstanding = round2(
       organizations.reduce((total, organization) => {
         const opening = num(organization.openingBalance);
-        const salesTotal = organization.sales.reduce(
-          (sum, sale) => sum + num(sale.totalAmount),
-          0
-        );
+        const salesTotal = organization.sales.reduce((sum, sale) => sum + num(sale.totalAmount), 0);
         const paymentsTotal = organization.payments.reduce(
           (sum, payment) => sum + num(payment.amount),
           0

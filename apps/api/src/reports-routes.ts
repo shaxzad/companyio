@@ -179,78 +179,80 @@ async function loadDayPnl(
   });
   const settings = parsePnlSettings(business?.settings);
 
-  const [cashSales, creditSales, onlinePayments, receipts, expenses, fuelTypes] = await Promise.all([
-    prisma.sale.findMany({
-      where: {
-        stationId,
-        status: 'CONFIRMED',
-        saleType: 'CASH',
-        ...(dayId
-          ? {
-              OR: [
-                { businessDayId: dayId },
-                { businessDayId: null, soldAt: { gte: start, lte: end } },
-              ],
-            }
-          : { soldAt: { gte: start, lte: end } }),
-      },
-      include: {
-        lines: {
-          include: { fuelType: { select: { id: true, code: true, purchasePrice: true } } },
+  const [cashSales, creditSales, onlinePayments, receipts, expenses, fuelTypes] = await Promise.all(
+    [
+      prisma.sale.findMany({
+        where: {
+          stationId,
+          status: 'CONFIRMED',
+          saleType: 'CASH',
+          ...(dayId
+            ? {
+                OR: [
+                  { businessDayId: dayId },
+                  { businessDayId: null, soldAt: { gte: start, lte: end } },
+                ],
+              }
+            : { soldAt: { gte: start, lte: end } }),
         },
-      },
-    }),
-    prisma.sale.findMany({
-      where: {
-        stationId,
-        status: 'CONFIRMED',
-        saleType: 'CREDIT',
-        soldAt: { gte: start, lte: end },
-      },
-      include: {
-        lines: {
-          include: { fuelType: { select: { id: true, code: true, purchasePrice: true } } },
+        include: {
+          lines: {
+            include: { fuelType: { select: { id: true, code: true, purchasePrice: true } } },
+          },
         },
-      },
-    }),
-    prisma.payment.findMany({
-      where: {
-        stationId,
-        paidAt: { gte: start, lte: end },
-        OR: [
-          { paymentAccount: { kind: { in: [...ONLINE_KINDS] } } },
-          { paymentAccountId: null, method: { in: [...ONLINE_KINDS] } },
-        ],
-      },
-      select: { amount: true },
-    }),
-    prisma.fuelReceipt.findMany({
-      where: {
-        stationId,
-        ...(dayId
-          ? {
-              OR: [
-                { businessDayId: dayId },
-                { businessDayId: null, receivedAt: { gte: start, lte: end } },
-              ],
-            }
-          : { receivedAt: { gte: start, lte: end } }),
-      },
-      select: {
-        accessLitres: true,
-        accessRate: true,
-        tankerTip: true,
-      },
-    }),
-    prisma.expense.findMany({
-      where: { stationId, spentAt: { gte: start, lte: end } },
-      include: { expenseCategory: { select: { code: true } } },
-    }),
-    prisma.fuelType.findMany({
-      where: { businessId },
-      select: { id: true, purchasePrice: true, sellingPrice: true },
-    }),
-  ]);
+      }),
+      prisma.sale.findMany({
+        where: {
+          stationId,
+          status: 'CONFIRMED',
+          saleType: 'CREDIT',
+          soldAt: { gte: start, lte: end },
+        },
+        include: {
+          lines: {
+            include: { fuelType: { select: { id: true, code: true, purchasePrice: true } } },
+          },
+        },
+      }),
+      prisma.payment.findMany({
+        where: {
+          stationId,
+          paidAt: { gte: start, lte: end },
+          OR: [
+            { paymentAccount: { kind: { in: [...ONLINE_KINDS] } } },
+            { paymentAccountId: null, method: { in: [...ONLINE_KINDS] } },
+          ],
+        },
+        select: { amount: true },
+      }),
+      prisma.fuelReceipt.findMany({
+        where: {
+          stationId,
+          ...(dayId
+            ? {
+                OR: [
+                  { businessDayId: dayId },
+                  { businessDayId: null, receivedAt: { gte: start, lte: end } },
+                ],
+              }
+            : { receivedAt: { gte: start, lte: end } }),
+        },
+        select: {
+          accessLitres: true,
+          accessRate: true,
+          tankerTip: true,
+        },
+      }),
+      prisma.expense.findMany({
+        where: { stationId, spentAt: { gte: start, lte: end } },
+        include: { expenseCategory: { select: { code: true } } },
+      }),
+      prisma.fuelType.findMany({
+        where: { businessId },
+        select: { id: true, purchasePrice: true, sellingPrice: true },
+      }),
+    ]
+  );
 
   const purchaseByFuel = new Map(
     fuelTypes.map((row) => [
@@ -530,9 +532,7 @@ export const registerReportsRoutes = (
   app.get('/api/v1/fuel/reports/company-statement', async (request, reply) => {
     const user = await requireUser(request, reply, authenticate);
     if (!user) return;
-    const query = z
-      .object({ organizationId: id, from: ymd, to: ymd })
-      .parse(request.query);
+    const query = z.object({ organizationId: id, from: ymd, to: ymd }).parse(request.query);
 
     const organization = await prisma.organization.findFirst({
       where: { id: query.organizationId, businessId: user.main_business_id },
@@ -572,29 +572,25 @@ export const registerReportsRoutes = (
         reference: 'OPENING',
         description: 'Opening balance',
       },
-      ...organization.sales.map(
-        (sale): Draft => ({
-          date: sale.soldAt,
-          type: 'CREDIT',
-          debit: num(sale.totalAmount),
-          credit: 0,
-          reference: sale.invoiceNumber ?? sale.saleNumber,
-          description: `${sale.vehicle?.registration ?? 'Vehicle'} · ${sale.lines
-            .map((line) => line.fuelType.code)
-            .join(', ')}`,
-          saleId: sale.id,
-        })
-      ),
-      ...organization.payments.map(
-        (payment): Draft => ({
-          date: payment.paidAt,
-          type: 'PAYMENT',
-          debit: 0,
-          credit: num(payment.amount),
-          reference: payment.reference ?? payment.id,
-          description: `${payment.method} payment`,
-        })
-      ),
+      ...organization.sales.map((sale): Draft => ({
+        date: sale.soldAt,
+        type: 'CREDIT',
+        debit: num(sale.totalAmount),
+        credit: 0,
+        reference: sale.invoiceNumber ?? sale.saleNumber,
+        description: `${sale.vehicle?.registration ?? 'Vehicle'} · ${sale.lines
+          .map((line) => line.fuelType.code)
+          .join(', ')}`,
+        saleId: sale.id,
+      })),
+      ...organization.payments.map((payment): Draft => ({
+        date: payment.paidAt,
+        type: 'PAYMENT',
+        debit: 0,
+        credit: num(payment.amount),
+        reference: payment.reference ?? payment.id,
+        description: `${payment.method} payment`,
+      })),
     ];
     all.sort((a, b) => a.date.getTime() - b.date.getTime());
 
@@ -876,13 +872,7 @@ export const registerReportsRoutes = (
         },
       });
       if (!day) continue;
-      const pnl = await loadDayPnl(
-        prisma,
-        user.main_business_id,
-        station.id,
-        businessDate,
-        day.id
-      );
+      const pnl = await loadDayPnl(prisma, user.main_business_id, station.id, businessDate, day.id);
       totals.revenue = round2(totals.revenue + pnl.revenue);
       totals.fuelCost = round2(totals.fuelCost + pnl.fuelCost);
       totals.otherExpenses = round2(totals.otherExpenses + pnl.otherExpenses);
