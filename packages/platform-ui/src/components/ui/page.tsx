@@ -1,5 +1,6 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { buttonVariants } from './button';
 
 /** Shared page layout tokens (brand via app theme — fuel remaps brand-* to #fb6514). */
 export const pageEyebrowClass = 'text-xs font-semibold uppercase tracking-[0.18em] text-brand-600';
@@ -7,10 +8,10 @@ export const pageTitleClass = 'mt-2 text-2xl font-semibold text-gray-900 dark:te
 export const pageSubClass = 'mt-1 text-sm text-gray-500 dark:text-gray-400';
 export const surfaceClass =
   'rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900';
-export const primaryActionClass =
-  'inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50';
-export const secondaryActionClass =
-  'inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:border-brand-300 hover:bg-brand-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200';
+/** @deprecated Prefer `<Button variant="primary" />`. Kept for Link `className` and gradual migration. */
+export const primaryActionClass = buttonVariants({ variant: 'primary' });
+/** @deprecated Prefer `<Button variant="secondary" />`. Kept for Link `className` and gradual migration. */
+export const secondaryActionClass = buttonVariants({ variant: 'secondary' });
 
 /** Primary submit button copy: Add / Update + loading variants. */
 export function submitActionLabel({

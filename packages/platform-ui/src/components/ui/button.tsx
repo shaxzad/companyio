@@ -4,30 +4,43 @@ import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '../../lib/utils';
 
+/**
+ * Product action button. Prefer `<Button variant="primary|secondary">` over raw
+ * `<button className={primaryActionClass}>` in apps.
+ * Variants match the shared brand action tokens used across fuel / platform apps.
+ */
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-500/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground shadow hover:bg-primary/90',
-        primary: 'bg-primary text-primary-foreground shadow hover:bg-primary/90',
-        destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
+        /** Brand fill — default product CTA / submit. */
+        primary:
+          'bg-brand-500 px-4 py-2.5 text-white shadow-none hover:bg-brand-600',
+        /** Alias of primary for older call sites. */
+        default:
+          'bg-brand-500 px-4 py-2.5 text-white shadow-none hover:bg-brand-600',
+        /** Outlined secondary action (Cancel, Refresh, Print). */
+        secondary:
+          'border border-gray-200 bg-white px-4 py-2.5 text-gray-700 hover:border-brand-300 hover:bg-brand-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200',
         outline:
-          'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground',
-        secondary: 'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
+          'border border-gray-200 bg-white px-4 py-2.5 text-gray-700 hover:border-brand-300 hover:bg-brand-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200',
+        destructive:
+          'bg-error-600 px-4 py-2.5 text-white shadow-none hover:bg-error-700',
+        ghost: 'bg-transparent px-3 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800',
+        link: 'bg-transparent px-0 py-0 text-brand-600 underline-offset-4 hover:underline',
       },
       size: {
-        default: 'h-9 px-4 py-2',
-        sm: 'h-8 rounded-md px-3 text-xs',
-        md: 'h-9 px-4 py-2',
-        lg: 'h-10 rounded-md px-8',
-        icon: 'size-9',
+        default: 'h-auto min-h-10',
+        sm: 'min-h-8 rounded-md px-3 py-1.5 text-xs',
+        md: 'h-auto min-h-10 px-4 py-2.5',
+        lg: 'min-h-11 rounded-lg px-6 py-3 text-base',
+        icon: 'size-9 shrink-0 p-0',
+        xs: 'min-h-8 rounded-md px-3 py-1.5 text-xs',
       },
     },
     defaultVariants: {
-      variant: 'default',
+      variant: 'primary',
       size: 'default',
     },
   }

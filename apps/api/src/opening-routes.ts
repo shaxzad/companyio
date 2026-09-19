@@ -156,9 +156,15 @@ export const registerOpeningRoutes = (
       alreadyOpened: Boolean(existing),
       requiresOwnerOverride,
       blockedReason: existing
-        ? `This business date is already ${existing.status === 'CLOSED' ? 'closed' : 'open'}.`
+        ? `This business date is already ${
+            existing.status === 'CLOSED'
+              ? 'closed'
+              : existing.status === 'RECONCILED'
+                ? 'reconciled'
+                : 'open'
+          }.`
         : requiresOwnerOverride
-          ? `Previous day ${toYmd(previous!.businessDate)} is still open. Only the owner can override.`
+          ? `Previous day ${toYmd(previous!.businessDate)} is still ${previous!.status === 'RECONCILED' ? 'reconciled (not closed)' : 'open'}. Only the owner can override.`
           : null,
       previousDay: previous
         ? { businessDate: toYmd(previous.businessDate), status: previous.status }
