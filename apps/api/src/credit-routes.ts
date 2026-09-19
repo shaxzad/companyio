@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { PrismaClient, Prisma } from './generated/prisma/client.ts';
 import type { User as AuthUser } from '@companyio/auth-contracts';
 import { sendApiError } from './http-errors.ts';
-import { assertDayChangeAllowed, writeAuditLog } from './audit.ts';
+import { assertDayChangeAllowed } from './audit.ts';
 import { syncTankClosingForStationDate, toYmdKarachi } from './stock-recon.ts';
 
 type Authenticator = (authorization?: string) => Promise<AuthUser | null>;
